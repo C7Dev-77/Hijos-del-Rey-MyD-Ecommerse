@@ -1,0 +1,287 @@
+@import "@fontsource/playfair-display/400.css";
+@import "@fontsource/playfair-display/500.css";
+@import "@fontsource/playfair-display/600.css";
+@import "@fontsource/playfair-display/700.css";
+@import "@fontsource/inter/300.css";
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Warm Furniture Store Theme */
+    --background: 40 33% 98%;
+    --foreground: 30 10% 15%;
+
+    --card: 40 30% 97%;
+    --card-foreground: 30 10% 15%;
+
+    --popover: 40 33% 98%;
+    --popover-foreground: 30 10% 15%;
+
+    /* Warm amber/wood primary */
+    --primary: 30 60% 35%;
+    --primary-foreground: 40 33% 98%;
+
+    /* Cream secondary */
+    --secondary: 40 25% 92%;
+    --secondary-foreground: 30 10% 25%;
+
+    --muted: 40 20% 90%;
+    --muted-foreground: 30 10% 45%;
+
+    /* Terracotta accent */
+    --accent: 18 70% 50%;
+    --accent-foreground: 40 33% 98%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 40 33% 98%;
+
+    --border: 35 20% 85%;
+    --input: 35 20% 85%;
+    --ring: 30 60% 35%;
+
+    --radius: 0.5rem;
+
+    /* Custom colors for the store */
+    --wood: 30 50% 30%;
+    --wood-light: 35 40% 45%;
+    --cream: 42 40% 95%;
+    --cream-dark: 40 30% 88%;
+    --terracotta: 18 70% 50%;
+    --forest: 150 30% 30%;
+    --gold: 42 80% 55%;
+    --charcoal: 30 10% 20%;
+
+    /* Gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(30 50% 30% / 0.9), hsl(30 40% 20% / 0.95));
+    --gradient-card: linear-gradient(180deg, hsl(40 30% 97%), hsl(40 25% 94%));
+    --gradient-gold: linear-gradient(135deg, hsl(42 80% 55%), hsl(35 70% 45%));
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(30 10% 15% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(30 10% 15% / 0.1), 0 2px 4px -2px hsl(30 10% 15% / 0.1);
+    --shadow-lg: 0 10px 15px -3px hsl(30 10% 15% / 0.1), 0 4px 6px -4px hsl(30 10% 15% / 0.1);
+    --shadow-xl: 0 20px 25px -5px hsl(30 10% 15% / 0.1), 0 8px 10px -6px hsl(30 10% 15% / 0.1);
+    --shadow-glow: 0 0 40px hsl(42 80% 55% / 0.3);
+
+    /* Sidebar (for admin) */
+    --sidebar-background: 30 10% 12%;
+    --sidebar-foreground: 40 20% 90%;
+    --sidebar-primary: 42 80% 55%;
+    --sidebar-primary-foreground: 30 10% 12%;
+    --sidebar-accent: 30 15% 20%;
+    --sidebar-accent-foreground: 40 20% 90%;
+    --sidebar-border: 30 10% 20%;
+    --sidebar-ring: 42 80% 55%;
+  }
+
+  .dark {
+    --background: 30 10% 8%;
+    --foreground: 40 20% 95%;
+
+    --card: 30 10% 12%;
+    --card-foreground: 40 20% 95%;
+
+    --popover: 30 10% 10%;
+    --popover-foreground: 40 20% 95%;
+
+    --primary: 42 70% 50%;
+    --primary-foreground: 30 10% 10%;
+
+    --secondary: 30 15% 18%;
+    --secondary-foreground: 40 20% 90%;
+
+    --muted: 30 10% 20%;
+    --muted-foreground: 40 15% 60%;
+
+    --accent: 18 60% 45%;
+    --accent-foreground: 40 20% 95%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 40 20% 95%;
+
+    --border: 30 10% 22%;
+    --input: 30 10% 22%;
+    --ring: 42 70% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+}
+
+@layer components {
+  /* Hero button variant styles */
+  .btn-hero {
+    @apply bg-primary text-primary-foreground hover:bg-wood-light transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5;
+  }
+
+  .btn-hero-outline {
+    @apply bg-transparent border-2 border-cream text-cream hover:bg-cream hover:text-charcoal transition-all duration-300;
+  }
+
+  /* Card hover effects */
+  .card-hover {
+    @apply transition-all duration-500 hover:shadow-xl hover:-translate-y-1;
+  }
+
+  /* Image zoom container */
+  .img-zoom {
+    @apply overflow-hidden;
+  }
+
+  .img-zoom img {
+    @apply transition-transform duration-700 ease-out;
+  }
+
+  .img-zoom:hover img {
+    @apply scale-110;
+  }
+
+  /* Gradient overlays */
+  .overlay-gradient {
+    @apply absolute inset-0 bg-gradient-to-t from-charcoal/80 via-charcoal/40 to-transparent;
+  }
+
+  /* Text animations */
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-gold to-terracotta;
+  }
+
+  /* Scrollbar styling */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-muted rounded-full;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-primary/30 rounded-full hover:bg-primary/50;
+  }
+
+  /* Admin sidebar styles */
+  .admin-sidebar {
+    @apply bg-sidebar text-sidebar-foreground;
+  }
+
+  /* Badge variants */
+  .badge-pending {
+    @apply bg-gold/20 text-gold border border-gold/30;
+  }
+
+  .badge-delivered {
+    @apply bg-forest/20 text-forest border border-forest/30;
+  }
+
+  .badge-cancelled {
+    @apply bg-destructive/20 text-destructive border border-destructive/30;
+  }
+}
+
+@layer utilities {
+  /* Animation utilities */
+  .animate-fade-up {
+    animation: fadeUp 0.6s ease-out forwards;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+
+  .animate-slide-in-right {
+    animation: slideInRight 0.4s ease-out forwards;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out forwards;
+  }
+
+  /* Stagger delays */
+  .delay-100 { animation-delay: 100ms; }
+  .delay-200 { animation-delay: 200ms; }
+  .delay-300 { animation-delay: 300ms; }
+  .delay-400 { animation-delay: 400ms; }
+  .delay-500 { animation-delay: 500ms; }
+
+  /* Parallax effect helper */
+  .parallax {
+    transform-style: preserve-3d;
+  }
+
+  /* 3D FlipCard utilities */
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+
+  .preserve-3d {
+    transform-style: preserve-3d;
+  }
+
+  .backface-hidden {
+    backface-visibility: hidden;
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
