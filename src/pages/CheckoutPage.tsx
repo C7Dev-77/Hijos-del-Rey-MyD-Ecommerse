@@ -54,7 +54,7 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<'transferencia' | 'nequi' | 'wompi'>('wompi');
 
   const [isProcessing, setIsProcessing] = useState(false);
-  const [orderComplete, setOrderComplete] = useState(false);
+  const [orderComplete, setOrderComplete] = useState<'wompi' | 'whatsapp' | false>(false);
   const navigate = useNavigate();
 
   const { items, getTotal, clearCart } = useCartStore();
@@ -91,6 +91,26 @@ export default function CheckoutPage() {
 
     if (paymentMethod === 'wompi') {
       try {
+        // Validar que la llave de Wompi esté configurada
+        const wompiPublicKey = import.meta.env.VITE_WOMPI_PUBLIC_KEY;
+        if (!wompiPublicKey || wompiPublicKey === '' || wompiPublicKey.includes('PEGA_TU')) {
+          setIsProcessing(false);
+          toast({
+            title: "Pasarela de pago no configurada",
+            description: "Contacta al administrador. Puedes usar WhatsApp para realizar tu pedido.",
+            variant: "destructive"
+          });
+          return;
+        }
+        if (wompiPublicKey.startsWith('pub_test_')) {
+          toast({
+            title: "⚠️ Modo Sandbox activo",
+            description: "Wompi está en modo de PRUEBA. Los pagos no son reales.",
+            variant: "default"
+          });
+          // Continúa de todas formas, útil para desarrollo/staging
+        }
+
         const reference = `ORDER-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
         // 1. Registrar intención en Supabase primero
@@ -113,7 +133,7 @@ export default function CheckoutPage() {
           currency: 'COP',
           amountInCents: total * 100,
           reference: reference,
-          publicKey: 'pub_test_Q5yS9jV9PsY6N6X6N6X6N6X6N6X6N6X6', // USAR LLAVE REAL EN PROD
+          publicKey: wompiPublicKey,
           customerData: {
             email: data.email,
             fullName: `${data.firstName} ${data.lastName}`,
@@ -146,7 +166,7 @@ export default function CheckoutPage() {
               });
 
             setIsProcessing(false);
-            setOrderComplete(true);
+            setOrderComplete('wompi');
             clearCart();
           } else {
             setIsProcessing(false);
@@ -214,7 +234,7 @@ export default function CheckoutPage() {
     window.open(whatsappUrl, '_blank');
 
     setIsProcessing(false);
-    setOrderComplete(true);
+    setOrderComplete('whatsapp');
     clearCart();
   };
 
@@ -247,6 +267,7 @@ export default function CheckoutPage() {
   }
 
   if (orderComplete) {
+    const isWompi = orderComplete === 'wompi';
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <Navbar />
@@ -254,27 +275,44 @@ export default function CheckoutPage() {
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            className="w-20 h-20 mx-auto mb-6 rounded-full bg-[#25D366] flex items-center justify-center shadow-lg shadow-[#25D366]/30"
+            className={`w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center shadow-lg ${isWompi
+              ? 'bg-primary shadow-primary/30'
+              : 'bg-[#25D366] shadow-[#25D366]/30'
+              }`}
           >
             <Check className="h-10 w-10 text-white" />
           </motion.div>
 
           <h1 className="font-display text-3xl font-bold mb-4">
-            ¡Redirigiendo a WhatsApp!
+            {isWompi ? '¡Pago Aprobado!' : '¡Redirigiendo a WhatsApp!'}
           </h1>
           <p className="text-muted-foreground mb-8 text-lg">
-            Te hemos llevado a nuestro chat de WhatsApp con el resumen completo de tu pedido para coordinar el pago y la entrega.
+            {isWompi
+              ? 'Tu pago fue procesado exitosamente. Recibirás confirmación de tu pedido pronto.'
+              : 'Te hemos llevado a nuestro chat de WhatsApp con el resumen completo de tu pedido para coordinar el pago y la entrega.'}
           </p>
 
           <div className="bg-muted/50 rounded-xl p-6 mb-8 text-left border border-border">
             <h3 className="font-semibold mb-2 flex items-center gap-2">
-              <MessageCircle className="h-5 w-5 text-[#25D366]" />
+              {isWompi
+                ? <ShieldCheck className="h-5 w-5 text-primary" />
+                : <MessageCircle className="h-5 w-5 text-[#25D366]" />}
               ¿Qué sigue ahora?
             </h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>1. Envíanos el mensaje pre-generado por WhatsApp.</li>
-              <li>2. Te confirmaremos disponibilidad y tiempos de entrega.</li>
-              <li>3. Te proporcionaremos los datos exactos para el pago.</li>
+              {isWompi ? (
+                <>
+                  <li>1. Tu pedido está registrado y en proceso.</li>
+                  <li>2. Nos pondremos en contacto para confirmar el envío.</li>
+                  <li>3. Recibirás actualizaciones del estado de tu entrega.</li>
+                </>
+              ) : (
+                <>
+                  <li>1. Envíanos el mensaje pre-generado por WhatsApp.</li>
+                  <li>2. Te confirmaremos disponibilidad y tiempos de entrega.</li>
+                  <li>3. Te proporcionaremos los datos exactos para el pago.</li>
+                </>
+              )}
             </ul>
           </div>
 

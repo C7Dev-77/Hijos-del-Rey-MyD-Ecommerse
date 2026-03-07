@@ -40,6 +40,11 @@ interface HomePageContent {
   newArrivalsTitle: string;
   designsTitle: string;
   heroBadgeText: string;
+  heroButton1Text: string;
+  heroButton2Text: string;
+  aboutSectionTitle: string;
+  aboutSectionText: string;
+  aboutSectionButtonText: string;
 }
 
 export interface Quote {
@@ -103,11 +108,11 @@ interface AdminState {
 }
 
 const defaultContactInfo: ContactInfo = {
-  phone: '+57 601 234 5678',
+  phone: '+57 304 629 7119',
   email: 'info@mydhijosdelrey.com',
-  address: 'Calle 85 #15-30, Bogotá, Colombia',
-  whatsapp: '+57 300 123 4567',
-  schedule: 'Lun - Sáb: 9:00 AM - 7:00 PM',
+  address: 'Barrio 12 de Octubre, Sampués, Sucre, Colombia',
+  whatsapp: '+57 324 425 9132',
+  schedule: 'Lun - Sáb: 8:00 AM - 6:00 PM',
   socialLinks: {
     facebook: 'https://facebook.com/mydhijosdelrey',
     instagram: 'https://instagram.com/mydhijosdelrey',
@@ -124,6 +129,11 @@ const defaultHomePageContent: HomePageContent = {
   newArrivalsTitle: 'Recién Llegados',
   designsTitle: 'Diseños que Transforman Espacios',
   heroBadgeText: '✨ Nuevos diseños 2025',
+  heroButton1Text: 'Explorar Catálogo',
+  heroButton2Text: 'Cotizar Mueble a Medida',
+  aboutSectionTitle: 'Artesanía de Excelencia',
+  aboutSectionText: 'Nuestro compromiso es crear piezas únicas que transformen tus espacios. Cada mueble está fabricado con maderas de origen sostenible y mentes creativas.',
+  aboutSectionButtonText: 'Conoce Nuestra Historia',
 };
 
 const defaultStoreSettings: StoreSettings = {
@@ -257,6 +267,11 @@ function mapSettingsFromDB(row: Record<string, unknown>) {
       bestSellersTitle: row.best_sellers_title as string,
       newArrivalsTitle: row.new_arrivals_title as string,
       designsTitle: row.designs_title as string,
+      heroButton1Text: (row.hero_button1_text as string) || defaultHomePageContent.heroButton1Text,
+      heroButton2Text: (row.hero_button2_text as string) || defaultHomePageContent.heroButton2Text,
+      aboutSectionTitle: (row.about_section_title as string) || defaultHomePageContent.aboutSectionTitle,
+      aboutSectionText: (row.about_section_text as string) || defaultHomePageContent.aboutSectionText,
+      aboutSectionButtonText: (row.about_section_button_text as string) || defaultHomePageContent.aboutSectionButtonText,
     },
     contactInfo: {
       phone: row.contact_phone as string,
@@ -522,7 +537,7 @@ export const useAdminStore = create<AdminState>()(
         set((state) => ({ homePageContent: { ...state.homePageContent, ...content } }));
         const updated = get().homePageContent;
 
-        await supabase.from('app_settings').update({
+        const { error } = await supabase.from('app_settings').update({
           hero_title: updated.heroTitle,
           hero_subtitle: updated.heroSubtitle,
           hero_image: updated.heroImage,
@@ -531,7 +546,17 @@ export const useAdminStore = create<AdminState>()(
           best_sellers_title: updated.bestSellersTitle,
           new_arrivals_title: updated.newArrivalsTitle,
           designs_title: updated.designsTitle,
+          // Intenta también actualizar las nuevas si existen (si la tabla se actualizó)
+          hero_button1_text: updated.heroButton1Text,
+          hero_button2_text: updated.heroButton2Text,
+          about_section_title: updated.aboutSectionTitle,
+          about_section_text: updated.aboutSectionText,
+          about_section_button_text: updated.aboutSectionButtonText,
         }).eq('id', 1);
+
+        if (error) {
+          console.warn('Algunas columnas nuevas podrían no estar en Supabase, error ignorado localmente:', error.message);
+        }
       },
 
       updateStoreSettings: async (settings) => {

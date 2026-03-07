@@ -25,11 +25,11 @@ CREATE TABLE IF NOT EXISTS app_settings (
   designs_title TEXT DEFAULT 'Diseños que Transforman Espacios',
 
   -- Contact info
-  contact_phone TEXT DEFAULT '+57 601 234 5678',
+  contact_phone TEXT DEFAULT '+57 304 629 7119',
   contact_email TEXT DEFAULT 'info@mydhijosdelrey.com',
-  contact_address TEXT DEFAULT 'Calle 85 #15-30, Bogotá, Colombia',
-  contact_whatsapp TEXT DEFAULT '+57 300 123 4567',
-  contact_schedule TEXT DEFAULT 'Lun - Sáb: 9:00 AM - 7:00 PM',
+  contact_address TEXT DEFAULT 'Barrio 12 de Octubre, Sampúes, Sucre, Colombia',
+  contact_whatsapp TEXT DEFAULT '+57 324 425 9132',
+  contact_schedule TEXT DEFAULT 'Lun - Sáb: 8:00 AM - 6:00 PM',
   social_facebook TEXT DEFAULT 'https://facebook.com/mydhijosdelrey',
   social_instagram TEXT DEFAULT 'https://instagram.com/mydhijosdelrey',
   social_pinterest TEXT DEFAULT 'https://pinterest.com/mydhijosdelrey',

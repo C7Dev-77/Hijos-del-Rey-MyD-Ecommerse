@@ -45,13 +45,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import HomeContentTab from '@/components/admin/HomeContentTab';
 
-const salesData = [
-  { month: 'Ene', ventas: 4200000 }, { month: 'Feb', ventas: 5800000 },
-  { month: 'Mar', ventas: 4900000 }, { month: 'Abr', ventas: 7200000 },
-  { month: 'May', ventas: 6100000 }, { month: 'Jun', ventas: 8500000 },
-];
-
-type AdminTab = 'dashboard' | 'products' | 'orders' | 'blog' | 'quotes' | 'contact' | 'home';
+type AdminTab = 'dashboard' | 'products' | 'orders' | 'blog' | 'quotes' | 'home';
 
 export default function AdminPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -77,7 +71,6 @@ export default function AdminPage() {
     { id: 'orders' as AdminTab, label: 'Pedidos', icon: ShoppingCart },
     { id: 'quotes' as AdminTab, label: 'Cotizaciones', icon: ClipboardList },
     { id: 'blog' as AdminTab, label: 'Blog', icon: FileText },
-    { id: 'contact' as AdminTab, label: 'Contacto', icon: Phone },
     { id: 'home' as AdminTab, label: 'Configuración', icon: Settings },
   ];
 
@@ -121,7 +114,16 @@ export default function AdminPage() {
       <main className="flex-1 p-6 lg:p-8 overflow-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="font-display text-2xl font-bold capitalize">{activeTab}</h1>
+            <h1 className="font-display text-2xl font-bold">
+              {{
+                dashboard: 'Dashboard',
+                products: 'Productos',
+                orders: 'Pedidos',
+                quotes: 'Cotizaciones',
+                blog: 'Blog',
+                home: 'Configuración',
+              }[activeTab] ?? activeTab}
+            </h1>
             <p className="text-muted-foreground">Bienvenido, {user?.user_metadata?.name || user?.email}</p>
           </div>
           <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden">
@@ -135,7 +137,6 @@ export default function AdminPage() {
           {activeTab === 'orders' && <OrdersTab key="orders" />}
           {activeTab === 'quotes' && <QuotesTab key="quotes" />}
           {activeTab === 'blog' && <BlogTab key="blog" />}
-          {activeTab === 'contact' && <ContactTab key="contact" />}
           {activeTab === 'home' && <HomeContentTab key="home" />}
         </AnimatePresence>
       </main>
@@ -143,28 +144,117 @@ export default function AdminPage() {
   );
 }
 
-// Dashboard Tab
+// Dashboard Tab — Datos reales desde Supabase
 function DashboardTab() {
   const { products, orders } = useAdminStore();
-  const topProducts = products.slice(0, 5).map(p => ({ name: p.name.slice(0, 20), ventas: Math.floor(Math.random() * 50) + 10 }));
+
+  // ── Calcular ventas de los últimos 6 meses ─────────────────────────
+  const salesData = (() => {
+    const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const now = new Date();
+    const months: { month: string; ventas: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const label = monthNames[d.getMonth()];
+      const ventas = orders
+        .filter(o => {
+          const orderDate = new Date(o.createdAt);
+          return (
+            orderDate.getMonth() === d.getMonth() &&
+            orderDate.getFullYear() === d.getFullYear() &&
+            o.status !== 'cancelled'
+          );
+        })
+        .reduce((sum, o) => sum + (o.total || 0), 0);
+      months.push({ month: label, ventas });
+    }
+    return months;
+  })();
+
+  // ── Ventas del mes actual ──────────────────────────────────────────
+  const ventasMes = salesData[salesData.length - 1]?.ventas ?? 0;
+
+  // ── Top Productos contados desde los items reales de las órdenes ──
+  // Los pedidos pueden tener dos formatos: {product:{id,name},quantity} o {productId,quantity,price}
+  const productCount: Record<string, { name: string; ventas: number }> = {};
+  for (const order of orders) {
+    if (!Array.isArray(order.products)) continue;
+    for (const rawItem of order.products as unknown[]) {
+      const item = rawItem as Record<string, unknown>;
+      // Formato del carrito: { product: { id, name }, quantity }
+      if (item.product && typeof item.product === 'object') {
+        const p = item.product as { id?: string; name?: string };
+        const id = p.id;
+        if (!id) continue;
+        if (!productCount[id]) productCount[id] = { name: (p.name || 'Producto').slice(0, 22), ventas: 0 };
+        productCount[id].ventas += (item.quantity as number) ?? 1;
+        continue;
+      }
+      // Formato alternativo: { productId, quantity }
+      const id = item.productId as string;
+      if (!id) continue;
+      if (!productCount[id]) productCount[id] = { name: id.slice(0, 22), ventas: 0 };
+      productCount[id].ventas += (item.quantity as number) ?? 1;
+    }
+  }
+  const topProducts = Object.values(productCount)
+    .sort((a, b) => b.ventas - a.ventas)
+    .slice(0, 5);
+
+  // Si no hay datos reales de pedidos, mostramos los productos del catálogo con 0
+  const chartProducts = topProducts.length > 0
+    ? topProducts
+    : products.slice(0, 5).map(p => ({ name: p.name.slice(0, 22), ventas: 0 }));
+
+  // ── KPIs ─────────────────────────────────────────────────────────
+  const pendingOrders = orders.filter(o => o.status === 'pending').length;
 
   const stats = [
-    { label: 'Ventas del Mes', value: formatPrice(8500000), icon: DollarSign, trend: '+12%', color: 'text-forest' },
-    { label: 'Pedidos', value: orders.length.toString(), icon: ShoppingCart, trend: '+5%', color: 'text-gold' },
-    { label: 'Productos', value: products.length.toString(), icon: Package, trend: '0%', color: 'text-primary' },
-    { label: 'Visitas', value: '2,345', icon: Eye, trend: '+18%', color: 'text-terracotta' },
+    {
+      label: 'Ventas del Mes',
+      value: formatPrice(ventasMes),
+      icon: DollarSign,
+      color: 'text-forest',
+      sublabel: ventasMes === 0 ? 'Sin pedidos este mes' : 'Suma de pedidos activos',
+    },
+    {
+      label: 'Total Pedidos',
+      value: orders.length.toString(),
+      icon: ShoppingCart,
+      color: 'text-gold',
+      sublabel: `${pendingOrders} pendiente${pendingOrders !== 1 ? 's' : ''}`,
+    },
+    {
+      label: 'Productos',
+      value: products.length.toString(),
+      icon: Package,
+      color: 'text-primary',
+      sublabel: 'En catálogo',
+    },
+    {
+      label: 'Pedidos Activos',
+      value: orders.filter(o => o.status === 'processing' || o.status === 'shipped').length.toString(),
+      icon: TrendingUp,
+      color: 'text-terracotta',
+      sublabel: 'En proceso o enviados',
+    },
   ];
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-      {/* Stats */}
+      {/* Stats KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {stats.map((stat, i) => (
-          <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
-            className="bg-card border border-border rounded-xl p-6">
+          <motion.div
+            key={stat.label}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.1 }}
+            className="bg-card border border-border rounded-xl p-6"
+          >
             <div className="flex items-center justify-between mb-4">
               <stat.icon className={cn('h-8 w-8', stat.color)} />
-              <span className={cn('text-xs font-medium', stat.trend.startsWith('+') ? 'text-forest' : 'text-muted-foreground')}>{stat.trend}</span>
+              <span className="text-xs font-medium text-muted-foreground">{stat.sublabel}</span>
             </div>
             <p className="font-display text-2xl font-bold">{stat.value}</p>
             <p className="text-sm text-muted-foreground">{stat.label}</p>
@@ -174,66 +264,98 @@ function DashboardTab() {
 
       {/* Charts */}
       <div className="grid lg:grid-cols-2 gap-6 mb-8">
+        {/* Ventas mensuales reales */}
         <div className="bg-card border border-border rounded-xl p-6">
-          <h3 className="font-display font-semibold mb-4">Ventas Mensuales</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={salesData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
-              <YAxis stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `${v / 1000000}M`} />
-              <Tooltip formatter={(v: number) => formatPrice(v)} />
-              <Line type="monotone" dataKey="ventas" stroke="hsl(var(--gold))" strokeWidth={2} />
-            </LineChart>
-          </ResponsiveContainer>
+          <h3 className="font-display font-semibold mb-1">Ventas Mensuales</h3>
+          <p className="text-xs text-muted-foreground mb-4">Últimos 6 meses — datos reales de pedidos</p>
+          {orders.length === 0 ? (
+            <div className="h-[250px] flex items-center justify-center text-muted-foreground text-sm">
+              Sin pedidos registrados aún
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={salesData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
+                <YAxis stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `${(v / 1000000).toFixed(1)}M`} />
+                <Tooltip formatter={(v: number) => formatPrice(v)} />
+                <Line type="monotone" dataKey="ventas" stroke="hsl(var(--gold))" strokeWidth={2} dot={{ fill: 'hsl(var(--gold))' }} />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
         </div>
+
+        {/* Top Productos reales */}
         <div className="bg-card border border-border rounded-xl p-6">
-          <h3 className="font-display font-semibold mb-4">Top Productos</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={topProducts} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis type="number" stroke="hsl(var(--muted-foreground))" />
-              <YAxis dataKey="name" type="category" width={100} stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 12 }} />
-              <Tooltip />
-              <Bar dataKey="ventas" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <h3 className="font-display font-semibold mb-1">Top Productos</h3>
+          <p className="text-xs text-muted-foreground mb-4">Unidades vendidas por producto</p>
+          {chartProducts.every(p => p.ventas === 0) ? (
+            <div className="h-[250px] flex items-center justify-center text-muted-foreground text-sm text-center px-4">
+              Los productos más vendidos aparecerán aquí cuando haya pedidos
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={chartProducts} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis type="number" stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
+                <YAxis dataKey="name" type="category" width={110} stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 11 }} />
+                <Tooltip formatter={(v: number) => [`${v} uds.`, 'Vendidos']} />
+                <Bar dataKey="ventas" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
       </div>
 
-      {/* Recent Orders */}
+      {/* Pedidos Recientes */}
       <div className="bg-card border border-border rounded-xl p-6">
         <h3 className="font-display font-semibold mb-4">Pedidos Recientes</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead><tr className="border-b border-border">
-              <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">ID</th>
-              <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Fecha</th>
-              <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Total</th>
-              <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Estado</th>
-            </tr></thead>
-            <tbody>
-              {orders.slice(0, 5).map(order => (
-                <tr key={order.id} className="border-b border-border hover:bg-muted/50">
-                  <td className="py-3 px-4 font-mono text-sm">{order.id}</td>
-                  <td className="py-3 px-4 text-sm">{order.createdAt}</td>
-                  <td className="py-3 px-4 text-sm font-medium">{formatPrice(order.total)}</td>
-                  <td className="py-3 px-4">
-                    <Badge className={cn(
-                      order.status === 'delivered' ? 'badge-delivered' :
-                        order.status === 'pending' ? 'badge-pending' : 'bg-primary/20 text-primary'
-                    )}>
-                      {order.status === 'delivered' ? 'Entregado' : order.status === 'pending' ? 'Pendiente' : order.status}
-                    </Badge>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        {orders.length === 0 ? (
+          <div className="py-12 text-center text-muted-foreground">
+            <ShoppingCart className="h-10 w-10 mx-auto mb-3 opacity-30" />
+            <p className="text-sm">Aún no hay pedidos registrados</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead><tr className="border-b border-border">
+                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">ID</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Fecha</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Total</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Estado</th>
+              </tr></thead>
+              <tbody>
+                {orders.slice(0, 5).map(order => (
+                  <tr key={order.id} className="border-b border-border hover:bg-muted/50">
+                    <td className="py-3 px-4 font-mono text-sm">{order.id.slice(0, 8)}…</td>
+                    <td className="py-3 px-4 text-sm">{order.createdAt}</td>
+                    <td className="py-3 px-4 text-sm font-medium">{formatPrice(order.total)}</td>
+                    <td className="py-3 px-4">
+                      <Badge className={cn(
+                        order.status === 'delivered' ? 'badge-delivered' :
+                          order.status === 'pending' ? 'badge-pending' :
+                            order.status === 'cancelled' ? 'bg-destructive/20 text-destructive' :
+                              'bg-primary/20 text-primary'
+                      )}>
+                        {order.status === 'delivered' ? 'Entregado' :
+                          order.status === 'pending' ? 'Pendiente' :
+                            order.status === 'processing' ? 'En proceso' :
+                              order.status === 'shipped' ? 'Enviado' :
+                                order.status === 'cancelled' ? 'Cancelado' :
+                                  order.status}
+                      </Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </motion.div>
   );
 }
+
 
 // Products Tab with CRUD
 function ProductsTab() {
@@ -246,13 +368,13 @@ function ProductsTab() {
   const [formData, setFormData] = useState({
     name: '',
     price: '',
+    originalPrice: '',
+    discount: '',
     stock: '',
     category: '',
     shortDescription: '',
     description: '',
     technicalDetails: '',
-    shippingInfo: '',
-    returnsInfo: '',
     images: '',
   });
 
@@ -261,7 +383,7 @@ function ProductsTab() {
   );
 
   const resetForm = () => {
-    setFormData({ name: '', price: '', stock: '', category: '', shortDescription: '', description: '', technicalDetails: '', shippingInfo: '', returnsInfo: '', images: '' });
+    setFormData({ name: '', price: '', originalPrice: '', discount: '', stock: '', category: '', shortDescription: '', description: '', technicalDetails: '', images: '' });
     setEditingProduct(null);
   };
 
@@ -275,13 +397,13 @@ function ProductsTab() {
     setFormData({
       name: product.name,
       price: product.price.toString(),
+      originalPrice: product.originalPrice?.toString() || '',
+      discount: product.discount?.toString() || '',
       stock: product.stock.toString(),
       category: product.category,
       shortDescription: product.shortDescription,
       description: product.description,
       technicalDetails: product.technicalDetails || '',
-      shippingInfo: product.shippingInfo || '',
-      returnsInfo: product.returnsInfo || '',
       images: product.images.join(', '),
     });
     setIsDialogOpen(true);
@@ -293,13 +415,15 @@ function ProductsTab() {
       name: formData.name,
       slug: formData.name.toLowerCase().replace(/\s+/g, '-'),
       price: parseInt(formData.price) || 0,
+      originalPrice: formData.originalPrice ? parseInt(formData.originalPrice) : undefined,
+      discount: formData.discount ? parseInt(formData.discount) : undefined,
       stock: parseInt(formData.stock) || 0,
       category: formData.category,
       shortDescription: formData.shortDescription,
       description: formData.description,
       technicalDetails: formData.technicalDetails,
-      shippingInfo: formData.shippingInfo,
-      returnsInfo: formData.returnsInfo,
+      shippingInfo: editingProduct?.shippingInfo,
+      returnsInfo: editingProduct?.returnsInfo,
       images: formData.images.split(',').map(url => url.trim()).filter(Boolean),
       dimensions: editingProduct?.dimensions || { width: 0, height: 0, depth: 0 },
       materials: editingProduct?.materials || [],
@@ -428,8 +552,16 @@ function ProductsTab() {
                 <Input type="number" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} />
               </div>
               <div className="space-y-2">
-                <Label>Stock</Label>
+                <Label>Stock (unidades)</Label>
                 <Input type="number" value={formData.stock} onChange={(e) => setFormData({ ...formData, stock: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Precio Original (opcional, si hay descuento)</Label>
+                <Input type="number" value={formData.originalPrice} onChange={(e) => setFormData({ ...formData, originalPrice: e.target.value })} placeholder="Ej: 2500000" />
+              </div>
+              <div className="space-y-2">
+                <Label>Descuento (%)</Label>
+                <Input type="number" min="0" max="100" value={formData.discount} onChange={(e) => setFormData({ ...formData, discount: e.target.value })} placeholder="Ej: 15" />
               </div>
             </div>
             <div className="space-y-2">
@@ -445,18 +577,14 @@ function ProductsTab() {
               <Textarea rows={2} value={formData.images} onChange={(e) => setFormData({ ...formData, images: e.target.value })} placeholder="https://imagen1.jpg, https://imagen2.jpg" />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div className="space-y-2">
                 <Label>Detalles Técnicos</Label>
-                <Textarea rows={4} value={formData.technicalDetails} onChange={(e) => setFormData({ ...formData, technicalDetails: e.target.value })} placeholder="Especificaciones técnicas..." />
+                <Textarea rows={4} value={formData.technicalDetails} onChange={(e) => setFormData({ ...formData, technicalDetails: e.target.value })} placeholder="Especificaciones técnicas del producto..." />
               </div>
-              <div className="space-y-2">
-                <Label>Envío</Label>
-                <Textarea rows={4} value={formData.shippingInfo} onChange={(e) => setFormData({ ...formData, shippingInfo: e.target.value })} placeholder="Información de envío..." />
-              </div>
-              <div className="space-y-2">
-                <Label>Devoluciones</Label>
-                <Textarea rows={4} value={formData.returnsInfo} onChange={(e) => setFormData({ ...formData, returnsInfo: e.target.value })} placeholder="Política de devoluciones..." />
+              <div className="p-3 bg-muted/50 rounded-lg border border-border text-sm text-muted-foreground">
+                ℹ️ Las políticas de <strong>envío y devoluciones</strong> se aplican a todos los productos por igual.
+                Puédelas editar en <strong>Configuración → Políticas</strong>.
               </div>
             </div>
           </div>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ArrowRight, X } from 'lucide-react';
 import { Button } from './button';
 import { cn } from '@/lib/utils';
@@ -10,10 +10,12 @@ interface FlipCardProps {
   frontTitle: string;
   frontSubtitle?: string;
   backTitle: string;
-  backContent: string; // Used for excerpt
-  fullContent?: string; // Used for full content html
+  backContent: string;
+  fullContent?: string;
   backButtonText?: string;
   backButtonLink?: string;
+  /** Si es false, oculta el botón. Por defecto true cuando hay backButtonText. */
+  showButton?: boolean;
   className?: string;
 }
 
@@ -24,29 +26,32 @@ export function FlipCard({
   backTitle,
   backContent,
   fullContent,
-  backButtonText = 'Ver más',
+  backButtonText,
   backButtonLink,
+  showButton = true,
   className,
 }: FlipCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
-  const handleFlip = () => {
-    setIsFlipped(!isFlipped);
-  };
+  const handleFlip = () => setIsFlipped(!isFlipped);
 
   const handleOpenModal = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setShowModal(true);
+    if (backButtonLink) {
+      window.location.href = backButtonLink;
+    } else {
+      setShowModal(true);
+    }
   };
+
+  // El botón solo aparece si showButton=true Y hay texto de botón
+  const shouldShowButton = showButton && !!backButtonText;
 
   return (
     <>
       <div
-        className={cn(
-          'relative w-full aspect-square cursor-pointer perspective-1000',
-          className
-        )}
+        className={cn('relative w-full aspect-square cursor-pointer perspective-1000', className)}
         onClick={handleFlip}
       >
         <motion.div
@@ -56,18 +61,18 @@ export function FlipCard({
           transition={{ duration: 0.6, ease: 'easeInOut' }}
           style={{ transformStyle: 'preserve-3d' }}
         >
-          {/* Front Face */}
+          {/* Cara Delantera */}
           <div
-            className="absolute inset-0 rounded-2xl overflow-hidden backface-hidden"
+            className="absolute inset-0 rounded-2xl overflow-hidden"
             style={{ backfaceVisibility: 'hidden' }}
           >
             <img
               src={frontImage}
               alt={frontTitle}
-              className="w-full h-full object-cover relative z-0"
+              className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-charcoal/80 via-charcoal/20 to-transparent z-10" />
-            <div className="absolute bottom-0 left-0 right-0 p-6 z-20">
+            <div className="absolute inset-0 bg-gradient-to-t from-charcoal/80 via-charcoal/20 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 p-6">
               <h3 className="font-display text-xl md:text-2xl font-bold text-cream mb-1">
                 {frontTitle}
               </h3>
@@ -81,19 +86,13 @@ export function FlipCard({
             </div>
           </div>
 
-          {/* Back Face */}
+          {/* Cara Trasera */}
           <div
-            className="absolute inset-0 rounded-2xl overflow-hidden bg-cream border border-border p-6 flex flex-col backface-hidden"
-            style={{
-              backfaceVisibility: 'hidden',
-              transform: 'rotateY(180deg)',
-            }}
+            className="absolute inset-0 rounded-2xl overflow-hidden bg-cream border border-border p-6 flex flex-col"
+            style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
           >
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsFlipped(false);
-              }}
+              onClick={(e) => { e.stopPropagation(); setIsFlipped(false); }}
               className="absolute top-3 right-3 p-1.5 rounded-full bg-muted hover:bg-muted/80 transition-colors z-20"
             >
               <X className="h-4 w-4 text-muted-foreground" />
@@ -107,32 +106,36 @@ export function FlipCard({
               <p>{backContent}</p>
             </div>
 
-            <Button
-              className="mt-4 bg-primary text-primary-foreground hover:bg-wood-light w-full"
-              size="sm"
-              onClick={handleOpenModal}
-            >
-              {backButtonText}
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+            {shouldShowButton && (
+              <Button
+                className="mt-4 bg-primary text-primary-foreground hover:bg-wood-light w-full"
+                size="sm"
+                onClick={handleOpenModal}
+              >
+                {backButtonText}
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            )}
           </div>
         </motion.div>
       </div>
 
-      <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="font-display text-2xl">{backTitle}</DialogTitle>
-            {frontSubtitle && (
-              <DialogDescription>{frontSubtitle}</DialogDescription>
-            )}
-          </DialogHeader>
-          <div className="mt-4 prose prose-stone max-w-none">
-            {/* If fullContent contains HTML */}
-            <div dangerouslySetInnerHTML={{ __html: fullContent || backContent }} />
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Modal de contenido completo — solo si no hay backButtonLink */}
+      {shouldShowButton && !backButtonLink && (
+        <Dialog open={showModal} onOpenChange={setShowModal}>
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="font-display text-2xl">{backTitle}</DialogTitle>
+              {frontSubtitle && (
+                <DialogDescription>{frontSubtitle}</DialogDescription>
+              )}
+            </DialogHeader>
+            <div className="mt-4 prose prose-stone max-w-none">
+              <div dangerouslySetInnerHTML={{ __html: fullContent || backContent }} />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 }

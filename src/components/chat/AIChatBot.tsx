@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, X, Send, Bot, User, Sparkles, Minimize2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { X, Send, Bot, User, Sparkles, Minimize2, RotateCcw } from 'lucide-react';
 import { sendChatMessage, type ChatMessage } from '@/lib/groq';
+import { useAdminStore } from '@/store/adminStore';
 
 interface DisplayMessage {
     id: string;
@@ -17,22 +19,56 @@ const WELCOME_MESSAGE: DisplayMessage = {
     timestamp: new Date(),
 };
 
+const SESSION_KEY = 'myd-chatbot-history';
+const RATE_LIMIT_MS = 1500; // Mínimo 1.5s entre mensajes
+const MAX_INPUT_LENGTH = 500;
+
+// Cargar historial del sessionStorage
+function loadChatHistory(): DisplayMessage[] {
+    try {
+        const saved = sessionStorage.getItem(SESSION_KEY);
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            return parsed.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) }));
+        }
+    } catch { /* ignore */ }
+    return [WELCOME_MESSAGE];
+}
+
+// Guardar historial en sessionStorage
+function saveChatHistory(messages: DisplayMessage[]) {
+    try {
+        // Guardar máximo los últimos 30 mensajes
+        const toSave = messages.slice(-30);
+        sessionStorage.setItem(SESSION_KEY, JSON.stringify(toSave));
+    } catch { /* ignore */ }
+}
+
 export function AIChatBot() {
     const [isOpen, setIsOpen] = useState(false);
-    const [messages, setMessages] = useState<DisplayMessage[]>([WELCOME_MESSAGE]);
+    const [messages, setMessages] = useState<DisplayMessage[]>(loadChatHistory);
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const [hasNewMessage, setHasNewMessage] = useState(false);
+    const [lastSentAt, setLastSentAt] = useState(0);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    const chatContainerRef = useRef<HTMLDivElement>(null);
+    const { contactInfo, products } = useAdminStore();
 
     const scrollToBottom = useCallback(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, []);
 
+    // Persistir historial cuando cambian los mensajes
     useEffect(() => {
+        saveChatHistory(messages);
         scrollToBottom();
-    }, [messages, isTyping, scrollToBottom]);
+    }, [messages, scrollToBottom]);
+
+    useEffect(() => {
+        if (isTyping) scrollToBottom();
+    }, [isTyping, scrollToBottom]);
 
     useEffect(() => {
         if (isOpen && inputRef.current) {
@@ -47,9 +83,32 @@ export function AIChatBot() {
         }
     }, [messages, isOpen]);
 
+    // Cerrar con ESC
+    useEffect(() => {
+        const handleEsc = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && isOpen) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('keydown', handleEsc);
+        return () => document.removeEventListener('keydown', handleEsc);
+    }, [isOpen]);
+
+    const handleClearChat = () => {
+        setMessages([WELCOME_MESSAGE]);
+        sessionStorage.removeItem(SESSION_KEY);
+    };
+
     const handleSend = async () => {
         const trimmed = input.trim();
         if (!trimmed || isTyping) return;
+
+        // Rate limiting
+        const now = Date.now();
+        if (now - lastSentAt < RATE_LIMIT_MS) {
+            return;
+        }
+        setLastSentAt(now);
 
         const userMsg: DisplayMessage = {
             id: `user-${Date.now()}`,
@@ -70,7 +129,14 @@ export function AIChatBot() {
         chatHistory.push({ role: 'user', content: trimmed });
 
         try {
-            const response = await sendChatMessage(chatHistory);
+            const response = await sendChatMessage(chatHistory, {
+                address: contactInfo.address,
+                whatsapp: contactInfo.whatsapp,
+                schedule: contactInfo.schedule,
+                email: contactInfo.email,
+                phone: contactInfo.phone,
+                products: products,
+            });
 
             const assistantMsg: DisplayMessage = {
                 id: `assistant-${Date.now()}`,
@@ -105,18 +171,84 @@ export function AIChatBot() {
         setHasNewMessage(false);
     };
 
-    // Renderizar markdown básico (bold, newlines)
+    // Sugerencias dinámicas basadas en productos reales
+    const dynamicSuggestions = (() => {
+        const base = ['¿Qué muebles tienen?', '¿Hacen envíos?'];
+        if (products.length > 0) {
+            const categories = [...new Set(products.map(p => p.category))].slice(0, 2);
+            categories.forEach(cat => {
+                base.push(`Muéstrame ${cat.toLowerCase()}`);
+            });
+        } else {
+            base.push('Quiero cotizar');
+        }
+        return base.slice(0, 3);
+    })();
+
+    // Renderizar markdown básico (bold, newlines, links)
     const renderContent = (content: string) => {
         return content.split('\n').map((line, i) => {
-            const parts = line.split(/(\*\*[^*]+\*\*)/g);
+            // First handle Markdown links [text](/url)
+            const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+            const linkParts: (string | JSX.Element)[] = [];
+            let lastIndex = 0;
+            let match;
+
+            while ((match = linkRegex.exec(line)) !== null) {
+                if (match.index > lastIndex) {
+                    linkParts.push(line.slice(lastIndex, match.index));
+                }
+                const text = match[1];
+                const url = match[2];
+                linkParts.push(
+                    <Link
+                        key={match.index}
+                        to={url}
+                        target={url.startsWith('http') ? '_blank' : undefined}
+                        rel={url.startsWith('http') ? 'noopener noreferrer' : undefined}
+                        className="font-semibold underline decoration-2 decoration-primary/50 underline-offset-2 hover:decoration-primary transition-colors text-primary"
+                        onClick={() => {
+                            // Si el link es interno, cerrar el chat
+                            if (!url.startsWith('http')) {
+                                setIsOpen(false);
+                            }
+                        }}
+                    >
+                        {text}
+                    </Link>
+                );
+                lastIndex = match.index + match[0].length;
+            }
+
+            if (lastIndex < line.length) {
+                linkParts.push(line.slice(lastIndex));
+            }
+
+            if (linkParts.length === 0) {
+                linkParts.push(line);
+            }
+
+            // Then handle bold (**text**) inside the text parts
+            const finalParts = linkParts.map((part, kp) => {
+                if (typeof part === 'string') {
+                    const boldParts = part.split(/(\*\*[^*]+\*\*)/g);
+                    return (
+                        <span key={kp}>
+                            {boldParts.map((bPart, kb) => {
+                                if (bPart.startsWith('**') && bPart.endsWith('**')) {
+                                    return <strong key={kb} className="font-semibold">{bPart.slice(2, -2)}</strong>;
+                                }
+                                return <span key={kb}>{bPart}</span>;
+                            })}
+                        </span>
+                    );
+                }
+                return part;
+            });
+
             return (
                 <span key={i}>
-                    {parts.map((part, j) => {
-                        if (part.startsWith('**') && part.endsWith('**')) {
-                            return <strong key={j} className="font-semibold">{part.slice(2, -2)}</strong>;
-                        }
-                        return <span key={j}>{part}</span>;
-                    })}
+                    {finalParts}
                     {i < content.split('\n').length - 1 && <br />}
                 </span>
             );
@@ -140,6 +272,8 @@ export function AIChatBot() {
                             background: 'linear-gradient(145deg, rgba(255,255,255,0.98), rgba(250,247,242,0.98))',
                             backdropFilter: 'blur(20px)',
                         }}
+                        role="dialog"
+                        aria-label="Chat con Rey, asistente virtual"
                     >
                         {/* Header */}
                         <div className="relative px-5 py-4 bg-gradient-to-r from-charcoal via-charcoal to-charcoal/95 text-cream flex items-center gap-3 shrink-0">
@@ -154,19 +288,35 @@ export function AIChatBot() {
                                     Rey
                                     <Sparkles className="w-3.5 h-3.5 text-gold" />
                                 </h3>
-                                <p className="text-cream/60 text-xs">Asistente virtual • En línea</p>
+                                <p className="text-cream/60 text-xs">
+                                    {isTyping ? 'Escribiendo...' : 'Asistente virtual • En línea'}
+                                </p>
                             </div>
-                            <button
-                                onClick={toggleChat}
-                                className="p-1.5 rounded-lg hover:bg-cream/10 transition-colors"
-                                aria-label="Cerrar chat"
-                            >
-                                <Minimize2 className="w-4 h-4" />
-                            </button>
+                            <div className="flex items-center gap-1">
+                                <button
+                                    onClick={handleClearChat}
+                                    className="p-1.5 rounded-lg hover:bg-cream/10 transition-colors"
+                                    aria-label="Limpiar conversación"
+                                    title="Limpiar chat"
+                                >
+                                    <RotateCcw className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                    onClick={toggleChat}
+                                    className="p-1.5 rounded-lg hover:bg-cream/10 transition-colors"
+                                    aria-label="Minimizar chat"
+                                >
+                                    <Minimize2 className="w-4 h-4" />
+                                </button>
+                            </div>
                         </div>
 
                         {/* Messages */}
-                        <div className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth" style={{ scrollbarGutter: 'stable' }}>
+                        <div
+                            ref={chatContainerRef}
+                            className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth"
+                            style={{ scrollbarGutter: 'stable' }}
+                        >
                             {messages.map((msg) => (
                                 <motion.div
                                     key={msg.id}
@@ -227,7 +377,7 @@ export function AIChatBot() {
                         {/* Quick Suggestions (solo si hay pocos mensajes) */}
                         {messages.length <= 2 && !isTyping && (
                             <div className="px-4 pb-2 flex gap-2 overflow-x-auto shrink-0">
-                                {['¿Qué muebles tienen?', '¿Hacen envíos?', 'Quiero cotizar'].map((suggestion) => (
+                                {dynamicSuggestions.map((suggestion) => (
                                     <button
                                         key={suggestion}
                                         onClick={() => {
@@ -252,11 +402,13 @@ export function AIChatBot() {
                                     ref={inputRef}
                                     type="text"
                                     value={input}
-                                    onChange={(e) => setInput(e.target.value)}
+                                    onChange={(e) => setInput(e.target.value.slice(0, MAX_INPUT_LENGTH))}
                                     onKeyDown={handleKeyDown}
                                     placeholder="Escribe tu pregunta..."
                                     className="flex-1 bg-transparent text-sm text-charcoal placeholder:text-charcoal/40 outline-none py-1.5"
                                     disabled={isTyping}
+                                    maxLength={MAX_INPUT_LENGTH}
+                                    aria-label="Escribe tu mensaje para Rey"
                                 />
                                 <button
                                     onClick={handleSend}
@@ -267,9 +419,16 @@ export function AIChatBot() {
                                     <Send className="w-4 h-4" />
                                 </button>
                             </div>
-                            <p className="text-[10px] text-charcoal/30 text-center mt-2">
-                                Asistente IA de M&D Hijos del Rey · Respuestas generadas por IA
-                            </p>
+                            <div className="flex items-center justify-between mt-2 px-1">
+                                <p className="text-[10px] text-charcoal/30">
+                                    Asistente IA · Respuestas generadas por IA
+                                </p>
+                                {input.length > 0 && (
+                                    <p className={`text-[10px] ${input.length > MAX_INPUT_LENGTH * 0.9 ? 'text-red-400' : 'text-charcoal/30'}`}>
+                                        {input.length}/{MAX_INPUT_LENGTH}
+                                    </p>
+                                )}
+                            </div>
                         </div>
                     </motion.div>
                 )}
@@ -285,7 +444,7 @@ export function AIChatBot() {
                     ? 'bg-charcoal/90 hover:bg-charcoal shadow-charcoal/20'
                     : 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/40 ring-4 ring-blue-600/20 animate-pulse-soft'
                     } hover:scale-110 active:scale-95 group`}
-                aria-label={isOpen ? 'Cerrar chat' : 'Abrir asistente virtual'}
+                aria-label={isOpen ? 'Cerrar chat' : 'Abrir asistente virtual Rey'}
             >
                 <AnimatePresence mode="wait">
                     {isOpen ? (

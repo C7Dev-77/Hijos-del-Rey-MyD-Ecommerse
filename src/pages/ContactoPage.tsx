@@ -1,9 +1,9 @@
 import { motion } from 'framer-motion';
-import { 
-  MapPin, 
-  Phone, 
-  Mail, 
-  Clock, 
+import {
+  MapPin,
+  Phone,
+  Mail,
+  Clock,
   MessageCircle,
   Facebook,
   Instagram,
@@ -19,6 +19,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
+import { useAdminStore } from '@/store/adminStore';
 
 const contactSchema = z.object({
   name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
@@ -31,6 +33,8 @@ const contactSchema = z.object({
 type ContactFormData = z.infer<typeof contactSchema>;
 
 export default function ContactoPage() {
+  const { contactInfo } = useAdminStore();
+
   const {
     register,
     handleSubmit,
@@ -41,35 +45,59 @@ export default function ContactoPage() {
   });
 
   const onSubmit = async (data: ContactFormData) => {
-    // Simulate form submission
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    toast({
-      title: '¡Mensaje enviado!',
-      description: 'Nos pondremos en contacto contigo pronto.',
-    });
-    reset();
+    try {
+      // Guardar mensaje en Supabase
+      const { error } = await supabase.from('contact_messages').insert([{
+        name: data.name,
+        email: data.email,
+        phone: data.phone || null,
+        subject: data.subject,
+        message: data.message,
+        read: false,
+      }]);
+
+      if (error) throw error;
+
+      toast({
+        title: '¡Mensaje enviado!',
+        description: 'Hemos recibido tu mensaje. Nos pondremos en contacto contigo pronto.',
+      });
+      reset();
+    } catch (err) {
+      console.error('Error al guardar mensaje de contacto:', err);
+      // Fallback: abrir WhatsApp con el mensaje si Supabase falla
+      const whatsappNumber = contactInfo.whatsapp.replace(/\D/g, '') || '573001234567';
+      const fallbackMsg = `Hola, soy ${data.name}.\n\n*Asunto:* ${data.subject}\n\n${data.message}`;
+      window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(fallbackMsg)}`, '_blank');
+      toast({
+        title: 'Error de conexión',
+        description: 'No pudimos guardar tu mensaje. Te redirigimos a WhatsApp para que no se pierda.',
+        variant: 'destructive',
+      });
+    }
   };
 
-  const contactInfo = [
+
+  const contactCards = [
     {
       icon: MapPin,
       title: 'Visítanos',
-      lines: ['Calle 45 #23-67, Zona Industrial', 'Bogotá, Colombia'],
+      lines: [contactInfo.address || 'Bogotá, Colombia'],
     },
     {
       icon: Phone,
       title: 'Llámanos',
-      lines: ['+57 300 123 4567', '+57 (1) 234 5678'],
+      lines: [contactInfo.phone || '+57 300 000 0000'],
     },
     {
       icon: Mail,
       title: 'Escríbenos',
-      lines: ['info@mydhijosdelrey.com', 'ventas@mydhijosdelrey.com'],
+      lines: [contactInfo.email || 'info@mydhijosdelrey.com'],
     },
     {
       icon: Clock,
       title: 'Horario',
-      lines: ['Lun - Vie: 8:00 AM - 6:00 PM', 'Sáb: 9:00 AM - 2:00 PM'],
+      lines: [contactInfo.schedule || 'Lun - Sáb: 9:00 AM - 7:00 PM'],
     },
   ];
 
@@ -90,7 +118,7 @@ export default function ContactoPage() {
               Contacto
             </h1>
             <p className="text-muted-foreground mt-4">
-              Estamos aquí para ayudarte. Contáctanos y resolveremos todas tus 
+              Estamos aquí para ayudarte. Contáctanos y resolveremos todas tus
               dudas sobre nuestros muebles artesanales.
             </p>
           </motion.div>
@@ -102,7 +130,7 @@ export default function ContactoPage() {
           <div className="grid lg:grid-cols-3 gap-12">
             {/* Contact Info */}
             <div className="lg:col-span-1 space-y-8">
-              {contactInfo.map((item, index) => (
+              {contactCards.map((item, index) => (
                 <motion.div
                   key={item.title}
                   initial={{ opacity: 0, x: -20 }}
@@ -143,7 +171,7 @@ export default function ContactoPage() {
 
               {/* WhatsApp CTA */}
               <motion.a
-                href="https://wa.me/573001234567"
+                href={`https://wa.me/${contactInfo.whatsapp.replace(/\D/g, '') || '573001234567'}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 whileHover={{ scale: 1.02 }}
@@ -261,21 +289,25 @@ export default function ContactoPage() {
             </motion.div>
           </div>
 
-          {/* Map Placeholder */}
+          {/* Mapa Real — Google Maps Embed (no requiere API key) */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="mt-16 rounded-2xl overflow-hidden h-96 bg-muted"
+            className="mt-16 rounded-2xl overflow-hidden h-96 shadow-lg border border-border"
           >
-            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-              <div className="text-center">
-                <MapPin className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p className="font-display text-lg">Mapa Interactivo</p>
-                <p className="text-sm">Calle 45 #23-67, Zona Industrial, Bogotá</p>
-              </div>
-            </div>
+            <iframe
+              title="Ubicación M&D Hijos del Rey — Sampués, Sucre"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15717.22!2d-75.3872!3d9.1836!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e59a9b5e5e5e5e5%3A0x1234567890abcdef!2sSamp%C3%BAes%2C%20Sucre%2C%20Colombia!5e0!3m2!1ses!2sco!4v1000000000000!5m2!1ses!2sco"
+              width="100%"
+              height="100%"
+              style={{ border: 0 }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
           </motion.div>
+
         </div>
       </main>
 

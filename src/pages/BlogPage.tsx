@@ -1,10 +1,13 @@
 import { motion } from 'framer-motion';
+import { BookOpen, Pencil } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { CartDrawer } from '@/components/cart/CartDrawer';
 import { FlipCard } from '@/components/ui/flip-card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useAdminStore } from '@/store/adminStore';
+import { Link } from 'react-router-dom';
 
 export default function BlogPage() {
   const { blogPosts } = useAdminStore();
@@ -25,11 +28,12 @@ export default function BlogPage() {
             className="max-w-2xl"
           >
             <h1 className="font-display text-4xl md:text-5xl font-bold text-charcoal">
-              Blog & Noticias
+              Blog &amp; Noticias
             </h1>
             <p className="text-muted-foreground mt-4">
               Consejos de decoración, tendencias en muebles y las historias detrás de
-              nuestras creaciones artesanales.
+              nuestras creaciones artesanales.{' '}
+              <span className="font-medium text-primary">Haz clic en cada tarjeta para descubrir más.</span>
             </p>
           </motion.div>
         </div>
@@ -37,7 +41,39 @@ export default function BlogPage() {
 
       <main className="py-16">
         <div className="container mx-auto px-4 lg:px-8">
-          {/* Featured Post as large FlipCard */}
+
+          {/* ── ESTADO VACÍO ── */}
+          {blogPosts.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col items-center justify-center py-32 text-center"
+            >
+              <div className="w-24 h-24 rounded-full bg-cream flex items-center justify-center mb-6 shadow-inner">
+                <BookOpen className="h-10 w-10 text-primary/60" />
+              </div>
+              <h2 className="font-display text-2xl font-bold text-charcoal mb-3">
+                Aún no hay artículos
+              </h2>
+              <p className="text-muted-foreground max-w-md mb-8">
+                Estamos preparando contenido increíble sobre decoración, carpintería artesanal
+                y tendencias en muebles. ¡Vuelve pronto!
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button asChild variant="outline">
+                  <Link to="/catalogo">Ver nuestros muebles</Link>
+                </Button>
+                <Button asChild className="bg-primary text-primary-foreground">
+                  <Link to="/cotizar">
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Cotiza tu diseño
+                  </Link>
+                </Button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ── ARTÍCULO DESTACADO (FlipCard grande) ── */}
           {featuredPost && (
             <motion.div
               initial={{ opacity: 0, y: 30 }}
@@ -45,7 +81,7 @@ export default function BlogPage() {
               viewport={{ once: true }}
               className="mb-16 max-w-2xl mx-auto"
             >
-              <Badge className="mb-4 bg-gold text-charcoal">Destacado</Badge>
+              <Badge className="mb-4 bg-gold text-charcoal">⭐ Destacado</Badge>
               <FlipCard
                 frontImage={featuredPost.image}
                 frontTitle={featuredPost.title}
@@ -59,28 +95,35 @@ export default function BlogPage() {
             </motion.div>
           )}
 
-          {/* Posts Grid with FlipCards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {otherPosts.map((post, index) => (
-              <motion.div
-                key={post.id}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <FlipCard
-                  frontImage={post.image}
-                  frontTitle={post.title}
-                  frontSubtitle={`${post.readTime} min • ${post.category}`}
-                  backTitle={post.title}
-                  backContent={post.excerpt}
-                  fullContent={post.content}
-                  backButtonText="Leer Más"
-                />
-              </motion.div>
-            ))}
-          </div>
+          {/* ── GRID DE ARTÍCULOS (FlipCards) ── */}
+          {otherPosts.length > 0 && (
+            <>
+              <h2 className="font-display text-2xl font-bold text-charcoal mb-8">
+                Más Artículos
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {otherPosts.map((post, index) => (
+                  <motion.div
+                    key={post.id}
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.08 }}
+                  >
+                    <FlipCard
+                      frontImage={post.image}
+                      frontTitle={post.title}
+                      frontSubtitle={`${post.readTime} min • ${post.category}`}
+                      backTitle={post.title}
+                      backContent={post.excerpt}
+                      fullContent={post.content}
+                      backButtonText="Leer Artículo Completo"
+                    />
+                  </motion.div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </main>
 

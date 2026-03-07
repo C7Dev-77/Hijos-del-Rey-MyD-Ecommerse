@@ -5,6 +5,56 @@ import { Footer } from '@/components/layout/Footer';
 import { CartDrawer } from '@/components/cart/CartDrawer';
 import { FlipCard } from '@/components/ui/flip-card';
 
+// Clave compartida con el panel de admin para persistir el equipo
+const TEAM_KEY = 'myb_team_members';
+
+interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  image: string;
+  bio: string;
+}
+
+const defaultTeam: TeamMember[] = [
+  {
+    id: '1',
+    name: 'Manuel Rodríguez',
+    role: 'Fundador & Maestro Ebanista',
+    image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400',
+    bio: 'Con más de 40 años de experiencia en ebanistería, Manuel es el alma de M&D. Su pasión por la madera comenzó a los 12 años en el taller de su abuelo.',
+  },
+  {
+    id: '2',
+    name: 'Daniela Martínez',
+    role: 'Co-Fundadora & Directora de Diseño',
+    image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400',
+    bio: 'Arquitecta de formación, Daniela aporta la visión estética moderna a nuestros diseños tradicionales.',
+  },
+  {
+    id: '3',
+    name: 'Carlos Herrera',
+    role: 'Maestro Carpintero Senior',
+    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+    bio: 'Carlos lleva 25 años perfeccionando el arte de la carpintería fina. Especialista en técnicas de ensamblaje tradicional.',
+  },
+  {
+    id: '4',
+    name: 'Ana Lucía Gómez',
+    role: 'Especialista en Tapicería',
+    image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400',
+    bio: 'Ana Lucía transformó su pasión por los textiles en una maestría en tapicería de alta gama.',
+  },
+];
+
+function loadTeam(): TeamMember[] {
+  try {
+    const raw = localStorage.getItem(TEAM_KEY);
+    return raw ? JSON.parse(raw) : defaultTeam;
+  } catch { return defaultTeam; }
+}
+
+
 export default function NosotrosPage() {
   const timeline = [
     {
@@ -57,32 +107,9 @@ export default function NosotrosPage() {
     },
   ];
 
-  const team = [
-    {
-      name: 'Manuel Rodríguez',
-      role: 'Fundador & Maestro Ebanista',
-      image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400',
-      bio: 'Con más de 40 años de experiencia en ebanistería, Manuel es el alma de M&D. Su pasión por la madera comenzó a los 12 años en el taller de su abuelo. Hoy, supervisa cada pieza que sale de nuestro taller, asegurando que cumpla con los más altos estándares de calidad.',
-    },
-    {
-      name: 'Daniela Martínez',
-      role: 'Co-Fundadora & Directora de Diseño',
-      image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400',
-      bio: 'Arquitecta de formación, Daniela aporta la visión estética moderna a nuestros diseños tradicionales. Su enfoque combina funcionalidad con belleza, creando piezas que son tanto obras de arte como muebles funcionales para el día a día.',
-    },
-    {
-      name: 'Carlos Herrera',
-      role: 'Maestro Carpintero Senior',
-      image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-      bio: 'Carlos lleva 25 años perfeccionando el arte de la carpintería fina. Especialista en técnicas de ensamblaje tradicional japonés, sus uniones son legendarias por su precisión y durabilidad. Lidera nuestro equipo de producción.',
-    },
-    {
-      name: 'Ana Lucía Gómez',
-      role: 'Especialista en Tapicería',
-      image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400',
-      bio: 'Ana Lucía transformó su pasión por los textiles en una maestría en tapicería de alta gama. Cada sofá y silla que tapiza cuenta una historia de detalle y dedicación. Sus técnicas combinan tradición europea con materiales colombianos.',
-    },
-  ];
+  // Carga el equipo desde localStorage (actualizado por el admin desde /admin → Configuración → Equipo)
+  const team = loadTeam();
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -91,12 +118,12 @@ export default function NosotrosPage() {
 
       {/* Hero */}
       <section className="relative pt-24 pb-32 overflow-hidden">
-        <div 
+        <div
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1920)' }}
         />
         <div className="absolute inset-0 bg-charcoal/70" />
-        
+
         <div className="container mx-auto px-4 lg:px-8 relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -107,7 +134,7 @@ export default function NosotrosPage() {
               Nuestra Historia
             </h1>
             <p className="text-cream/80 text-xl">
-              Más de tres décadas dedicados a crear muebles artesanales que 
+              Más de tres décadas dedicados a crear muebles artesanales que
               transforman casas en hogares.
             </p>
           </motion.div>
@@ -132,18 +159,18 @@ export default function NosotrosPage() {
                 </h2>
                 <div className="space-y-4 text-muted-foreground">
                   <p>
-                    En 1990, Manuel y Daniela comenzaron con un sueño: crear muebles que no 
-                    solo fueran funcionales, sino verdaderas obras de arte que contaran historias 
+                    En 1990, Manuel y Daniela comenzaron con un sueño: crear muebles que no
+                    solo fueran funcionales, sino verdaderas obras de arte que contaran historias
                     y crearan memorias.
                   </p>
                   <p>
-                    Hoy, M&D Hijos del Rey es sinónimo de calidad artesanal en Colombia. 
-                    Cada pieza que sale de nuestro taller lleva consigo el legado de técnicas 
+                    Hoy, M&D Hijos del Rey es sinónimo de calidad artesanal en Colombia.
+                    Cada pieza que sale de nuestro taller lleva consigo el legado de técnicas
                     tradicionales perfeccionadas durante generaciones.
                   </p>
                   <p>
-                    Nuestro compromiso va más allá de la madera: trabajamos con proveedores 
-                    certificados, utilizamos materiales sostenibles y garantizamos condiciones 
+                    Nuestro compromiso va más allá de la madera: trabajamos con proveedores
+                    certificados, utilizamos materiales sostenibles y garantizamos condiciones
                     justas para todos nuestros artesanos.
                   </p>
                 </div>
@@ -199,9 +226,8 @@ export default function NosotrosPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.1 }}
-                  className={`relative flex items-center mb-12 ${
-                    index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'
-                  }`}
+                  className={`relative flex items-center mb-12 ${index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'
+                    }`}
                 >
                   {/* Content */}
                   <div className={`w-full md:w-1/2 ${index % 2 === 0 ? 'md:pr-16' : 'md:pl-16'} pl-20 md:pl-0`}>
@@ -304,8 +330,6 @@ export default function NosotrosPage() {
                     frontSubtitle={member.role}
                     backTitle={member.name}
                     backContent={member.bio}
-                    backButtonText="Contactar"
-                    backButtonLink="/contacto"
                   />
                 </motion.div>
               ))}

@@ -20,12 +20,18 @@
   <meta name="twitter:title" content="M&D Hijos del Rey | Muebles Artesanales" />
   <meta name="twitter:image" content="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1200" />
   <link rel="icon" type="image/png" href="/logo.png" />
+
+  <!-- Preconnect to critical third-party origins -->
+  <link rel="preconnect" href="https://tcsljaqcmcadhhspdvco.supabase.co" />
+  <link rel="preconnect" href="https://images.unsplash.com" />
+  <link rel="dns-prefetch" href="https://checkout.wompi.co" />
 </head>
 
 <body>
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
-  <script src="https://checkout.wompi.co/widget.js"></script>
+  <!-- Wompi widget: cargado async para no bloquear el render principal -->
+  <script src="https://checkout.wompi.co/widget.js" async></script>
 </body>
 
 </html>

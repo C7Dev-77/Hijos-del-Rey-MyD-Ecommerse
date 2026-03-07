@@ -1,27 +1,14 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+# ============================================
+# .gitignore — M&D Hijos del Rey V2.0
+# ============================================
 
-node_modules
-dist
-dist-ssr
-*.local
+# Dependencies
+node_modules/
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# Build outputs
+dist/
+dist-ssr/
+build/
 
 # Environment variables - NEVER commit these!
 .env
@@ -30,33 +17,26 @@ dist-ssr
 .env.test.local
 .env.production.local
 .env*.local
+!.env.example
 
-# Supabase
-.supabase
-
-# OS files
-Thumbs.db
-
-# Auto-generated entries
-# Dependencies
-node_modules/
+# Logs
+logs/
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# Build outputs
-dist/
-build/
-*.log
-
-# Environment files
-.env
-.env.*
-!.env.example
-
-# IDE files
-.vscode/
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
 .idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 *.swp
 *.swo
 
@@ -64,14 +44,17 @@ build/
 .DS_Store
 Thumbs.db
 
+# Supabase
+.supabase/
+
 # Temporary files
 *.tmp
 *.temp
 .cache/
 
-# Sensitive files (auto-detected)
-.env
+# Build analysis / debug output
 build_output.txt
-dist
-node_modules
-
+eslint.json
+eslint2.json
+eslint_final.txt
+eslint_output.txt

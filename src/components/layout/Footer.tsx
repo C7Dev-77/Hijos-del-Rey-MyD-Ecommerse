@@ -1,19 +1,28 @@
 import { Link } from 'react-router-dom';
-import { 
-  Facebook, 
-  Instagram, 
-  Twitter, 
-  MapPin, 
-  Phone, 
+import {
+  Facebook,
+  Instagram,
+  Twitter,
+  MapPin,
+  Phone,
   Mail,
   Clock,
   ArrowRight
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { CATEGORIES } from '@/data/mock';
+import { useAdminStore } from '@/store/adminStore';
 
 export function Footer() {
+  const { contactInfo, products } = useAdminStore();
+
+  // Categorías únicas a partir de los productos reales
+  const categories = Array.from(
+    new Set(products.map((p) => p.category))
+  ).filter(Boolean).slice(0, 6);
+
+  const currentYear = new Date().getFullYear();
+
   return (
     <footer className="bg-charcoal text-cream">
       {/* Newsletter Section */}
@@ -48,35 +57,44 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
           {/* Brand Column */}
           <div className="space-y-6">
-            <Link to="/" className="inline-block">
-              <h2 className="font-display text-2xl font-bold">
-                M&D <span className="text-gold">Hijos del Rey</span>
-              </h2>
+            <Link to="/" className="inline-flex items-center gap-3">
+              <img src="/logo.png" alt="M&D Hijos del Rey" className="h-12 w-auto" />
             </Link>
             <p className="text-cream/70 text-sm leading-relaxed">
-              Más de 30 años creando muebles artesanales que transforman 
-              hogares en espacios únicos. Cada pieza cuenta una historia 
-              de tradición y calidad.
+              Muebles artesanales colombianos de alta calidad. Cada pieza cuenta
+              una historia de tradición y calidad hecha en Sampués, Sucre.
             </p>
             <div className="flex space-x-4">
-              <a 
-                href="#" 
-                className="w-10 h-10 rounded-full bg-cream/10 flex items-center justify-center hover:bg-gold hover:text-charcoal transition-colors"
-              >
-                <Facebook className="h-5 w-5" />
-              </a>
-              <a 
-                href="#" 
-                className="w-10 h-10 rounded-full bg-cream/10 flex items-center justify-center hover:bg-gold hover:text-charcoal transition-colors"
-              >
-                <Instagram className="h-5 w-5" />
-              </a>
-              <a 
-                href="#" 
-                className="w-10 h-10 rounded-full bg-cream/10 flex items-center justify-center hover:bg-gold hover:text-charcoal transition-colors"
-              >
-                <Twitter className="h-5 w-5" />
-              </a>
+              {contactInfo.socialLinks?.facebook && (
+                <a
+                  href={contactInfo.socialLinks.facebook}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 rounded-full bg-cream/10 flex items-center justify-center hover:bg-gold hover:text-charcoal transition-colors"
+                >
+                  <Facebook className="h-5 w-5" />
+                </a>
+              )}
+              {contactInfo.socialLinks?.instagram && (
+                <a
+                  href={contactInfo.socialLinks.instagram}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 rounded-full bg-cream/10 flex items-center justify-center hover:bg-gold hover:text-charcoal transition-colors"
+                >
+                  <Instagram className="h-5 w-5" />
+                </a>
+              )}
+              {contactInfo.socialLinks?.pinterest && (
+                <a
+                  href={contactInfo.socialLinks.pinterest}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 rounded-full bg-cream/10 flex items-center justify-center hover:bg-gold hover:text-charcoal transition-colors"
+                >
+                  <Twitter className="h-5 w-5" />
+                </a>
+              )}
             </div>
           </div>
 
@@ -86,72 +104,102 @@ export function Footer() {
               Enlaces Rápidos
             </h3>
             <ul className="space-y-3">
-              {['Inicio', 'Catálogo', 'Nosotros', 'Cotizar', 'Blog', 'Contacto'].map((item) => (
-                <li key={item}>
-                  <Link 
-                    to={`/${item === 'Inicio' ? '' : item.toLowerCase()}`}
+              {[
+                { label: 'Inicio', to: '/' },
+                { label: 'Catálogo', to: '/catalogo' },
+                { label: 'Nosotros', to: '/nosotros' },
+                { label: 'Cotizar', to: '/cotizar' },
+                { label: 'Blog', to: '/blog' },
+                { label: 'Contacto', to: '/contacto' },
+              ].map((item) => (
+                <li key={item.label}>
+                  <Link
+                    to={item.to}
                     className="text-cream/70 hover:text-gold transition-colors text-sm flex items-center group"
                   >
                     <ArrowRight className="h-4 w-4 mr-2 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-                    {item}
+                    {item.label}
                   </Link>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Categories */}
+          {/* Categories — dinámicas desde los productos reales */}
           <div>
             <h3 className="font-display text-lg font-semibold mb-6">
               Categorías
             </h3>
             <ul className="space-y-3">
-              {CATEGORIES.map((category) => (
-                <li key={category.id}>
-                  <Link 
-                    to={`/catalogo?categoria=${category.slug}`}
-                    className="text-cream/70 hover:text-gold transition-colors text-sm flex items-center group"
-                  >
-                    <ArrowRight className="h-4 w-4 mr-2 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-                    {category.name}
-                  </Link>
-                </li>
-              ))}
+              {categories.length > 0 ? (
+                categories.map((cat) => (
+                  <li key={cat}>
+                    <Link
+                      to={`/catalogo?categoria=${encodeURIComponent(cat)}`}
+                      className="text-cream/70 hover:text-gold transition-colors text-sm flex items-center group"
+                    >
+                      <ArrowRight className="h-4 w-4 mr-2 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                      {cat}
+                    </Link>
+                  </li>
+                ))
+              ) : (
+                // Fallback mientras los productos carguen
+                ['Salas', 'Comedores', 'Alcobas', 'Poltronas', 'Decoración'].map((cat) => (
+                  <li key={cat}>
+                    <Link
+                      to={`/catalogo?categoria=${cat.toLowerCase()}`}
+                      className="text-cream/70 hover:text-gold transition-colors text-sm flex items-center group"
+                    >
+                      <ArrowRight className="h-4 w-4 mr-2 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                      {cat}
+                    </Link>
+                  </li>
+                ))
+              )}
             </ul>
           </div>
 
-          {/* Contact Info */}
+          {/* Contact Info — datos dinámicos desde adminStore/Supabase */}
           <div>
             <h3 className="font-display text-lg font-semibold mb-6">
               Contacto
             </h3>
             <ul className="space-y-4">
-              <li className="flex items-start space-x-3">
-                <MapPin className="h-5 w-5 text-gold shrink-0 mt-0.5" />
-                <span className="text-cream/70 text-sm">
-                  Calle 45 #23-67, Zona Industrial<br />
-                  Bogotá, Colombia
-                </span>
-              </li>
-              <li className="flex items-center space-x-3">
-                <Phone className="h-5 w-5 text-gold shrink-0" />
-                <a href="tel:+573001234567" className="text-cream/70 hover:text-gold text-sm">
-                  +57 300 123 4567
-                </a>
-              </li>
-              <li className="flex items-center space-x-3">
-                <Mail className="h-5 w-5 text-gold shrink-0" />
-                <a href="mailto:info@myd.com" className="text-cream/70 hover:text-gold text-sm">
-                  info@mydhijosdelrey.com
-                </a>
-              </li>
-              <li className="flex items-start space-x-3">
-                <Clock className="h-5 w-5 text-gold shrink-0 mt-0.5" />
-                <span className="text-cream/70 text-sm">
-                  Lun - Vie: 8:00 AM - 6:00 PM<br />
-                  Sáb: 9:00 AM - 2:00 PM
-                </span>
-              </li>
+              {contactInfo.address && (
+                <li className="flex items-start space-x-3">
+                  <MapPin className="h-5 w-5 text-gold shrink-0 mt-0.5" />
+                  <span className="text-cream/70 text-sm">{contactInfo.address}</span>
+                </li>
+              )}
+              {contactInfo.phone && (
+                <li className="flex items-center space-x-3">
+                  <Phone className="h-5 w-5 text-gold shrink-0" />
+                  <a
+                    href={`tel:${contactInfo.phone.replace(/\s/g, '')}`}
+                    className="text-cream/70 hover:text-gold text-sm"
+                  >
+                    {contactInfo.phone}
+                  </a>
+                </li>
+              )}
+              {contactInfo.email && (
+                <li className="flex items-center space-x-3">
+                  <Mail className="h-5 w-5 text-gold shrink-0" />
+                  <a
+                    href={`mailto:${contactInfo.email}`}
+                    className="text-cream/70 hover:text-gold text-sm"
+                  >
+                    {contactInfo.email}
+                  </a>
+                </li>
+              )}
+              {contactInfo.schedule && (
+                <li className="flex items-start space-x-3">
+                  <Clock className="h-5 w-5 text-gold shrink-0 mt-0.5" />
+                  <span className="text-cream/70 text-sm">{contactInfo.schedule}</span>
+                </li>
+              )}
             </ul>
           </div>
         </div>
@@ -162,7 +210,7 @@ export function Footer() {
         <div className="container mx-auto px-4 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-cream/50 text-sm">
-              © 2024 M&D Hijos del Rey. Todos los derechos reservados.
+              © {currentYear} M&amp;D Hijos del Rey. Todos los derechos reservados.
             </p>
             <div className="flex items-center space-x-6 text-sm">
               <Link to="#" className="text-cream/50 hover:text-gold transition-colors">

@@ -87,7 +87,7 @@ function HeroSection() {
                 asChild
               >
                 <Link to="/catalogo">
-                  Explorar Catálogo
+                  {homePageContent.heroButton1Text}
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
@@ -98,7 +98,7 @@ function HeroSection() {
                 asChild
               >
                 <Link to="/cotizar">
-                  Cotizar Mueble a Medida
+                  {homePageContent.heroButton2Text}
                 </Link>
               </Button>
             </motion.div>
@@ -145,7 +145,7 @@ function CategoriesSection() {
         </motion.div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 auto-rows-[200px] md:auto-rows-[250px]">
-          {CATEGORIES.map((category, index) => {
+          {CATEGORIES.filter(c => c.slug !== 'decoracion').slice(0, 4).map((category, index) => {
             const sizes = [
               'md:col-span-2 md:row-span-2',
               'md:col-span-2',
@@ -357,8 +357,9 @@ function NewArrivalsSection() {
   );
 }
 
-// CTA Section
+// CTA / About Section
 function CTASection() {
+  const { homePageContent } = useAdminStore();
   return (
     <section className="py-24 relative overflow-hidden">
       <div
@@ -377,11 +378,10 @@ function CTASection() {
           className="max-w-3xl mx-auto text-center"
         >
           <h2 className="font-display text-4xl md:text-5xl font-bold text-cream mb-6">
-            ¿Tienes un Diseño en Mente?
+            {homePageContent.aboutSectionTitle}
           </h2>
           <p className="text-cream/80 text-lg mb-8">
-            Creamos muebles a medida que se adaptan perfectamente a tu espacio y estilo.
-            Cuéntanos tu idea y la haremos realidad.
+            {homePageContent.aboutSectionText}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
@@ -389,8 +389,8 @@ function CTASection() {
               className="bg-gold text-charcoal hover:bg-gold/90 text-lg px-8"
               asChild
             >
-              <Link to="/cotizar">
-                Solicitar Cotización
+              <Link to="/nosotros">
+                {homePageContent.aboutSectionButtonText}
               </Link>
             </Button>
             <Button

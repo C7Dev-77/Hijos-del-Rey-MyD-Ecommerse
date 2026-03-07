@@ -123,6 +123,14 @@ export const CATEGORIES: Category[] = [
     image: 'https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?w=800',
     productCount: 4,
   },
+  {
+    id: '5',
+    name: 'Decoración',
+    slug: 'decoracion',
+    description: 'Accesorios y piezas decorativas para dar el toque final a tu hogar.',
+    image: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800',
+    productCount: 0,
+  },
 ];
 
 export const PRODUCTS: Product[] = [];
