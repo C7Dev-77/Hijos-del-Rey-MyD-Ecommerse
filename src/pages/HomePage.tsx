@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { CATEGORIES } from '@/data/mock';
 
 import { useAdminStore } from '@/store/adminStore';
+import { usePageSEO } from '@/hooks/useSEO';
 
 // Hero Section with Parallax
 function HeroSection() {
@@ -412,6 +413,12 @@ function CTASection() {
 
 // Main Home Page
 export default function HomePage() {
+  usePageSEO({
+    title: 'Muebles Artesanales Colombianos — Salas, Comedores, Alcobas',
+    description: 'M&D Hijos del Rey: muebles artesanales colombianos hechos a mano. Salas, comedores, alcobas y poltronas en madera de alta calidad. Envío a todo Colombia. Cotiza gratis tu mueble a medida.',
+    path: '/',
+  });
+
   return (
     <div className="min-h-screen">
       <Navbar />

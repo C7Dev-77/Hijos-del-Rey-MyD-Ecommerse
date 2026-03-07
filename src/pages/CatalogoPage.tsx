@@ -20,6 +20,7 @@ import { Slider } from '@/components/ui/slider';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { CATEGORIES, formatPrice, Product } from '@/data/mock';
 import { useAdminStore } from '@/store/adminStore';
+import { usePageSEO } from '@/hooks/useSEO';
 
 interface FiltersContentProps {
   searchQuery: string;
@@ -135,6 +136,12 @@ const FiltersContent = ({
 
 export default function CatalogoPage() {
   const { products: allProducts } = useAdminStore();
+
+  usePageSEO({
+    title: 'Catálogo de Muebles Artesanales',
+    description: 'Explora el catálogo completo de muebles artesanales de M&D Hijos del Rey. Salas, comedores, alcobas, poltronas y decoración. Muebles colombianos de madera de alta calidad con envío a todo el país.',
+    path: '/catalogo',
+  });
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
   const [priceRange, setPriceRange] = useState([0, 6000000]);

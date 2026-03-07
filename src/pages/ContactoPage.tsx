@@ -21,6 +21,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { useAdminStore } from '@/store/adminStore';
+import { usePageSEO } from '@/hooks/useSEO';
 
 const contactSchema = z.object({
   name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
@@ -34,6 +35,12 @@ type ContactFormData = z.infer<typeof contactSchema>;
 
 export default function ContactoPage() {
   const { contactInfo } = useAdminStore();
+
+  usePageSEO({
+    title: 'Contacto — Escríbenos o Visítanos en Sampués, Sucre',
+    description: 'Contacta a M&D Hijos del Rey. Estamos en Sampués, Sucre, Colombia. Llámanos, escríbenos por WhatsApp o envíanos un mensaje. Te asesoramos sobre muebles artesanales a medida.',
+    path: '/contacto',
+  });
 
   const {
     register,

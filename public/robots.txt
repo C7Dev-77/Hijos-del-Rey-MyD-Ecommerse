@@ -1,14 +1,36 @@
+# ============================================
+# robots.txt — M&D Hijos del Rey
+# ============================================
+
+# Buscadores principales
 User-agent: Googlebot
 Allow: /
+Disallow: /admin
+Disallow: /perfil
+Disallow: /checkout
+Disallow: /favoritos
 
 User-agent: Bingbot
 Allow: /
+Disallow: /admin
+Disallow: /perfil
+Disallow: /checkout
+Disallow: /favoritos
 
+# Redes sociales
 User-agent: Twitterbot
 Allow: /
 
 User-agent: facebookexternalhit
 Allow: /
 
+# Todos los demás
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /perfil
+Disallow: /checkout
+Disallow: /favoritos
+
+# Sitemap
+Sitemap: https://mydhijosdelrey.com/sitemap.xml

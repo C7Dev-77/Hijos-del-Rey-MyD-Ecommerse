@@ -20,6 +20,7 @@ import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useAdminStore } from '@/store/adminStore';
 import { sendChatMessage } from '@/lib/groq';
+import { usePageSEO } from '@/hooks/useSEO';
 
 // ── Schemas de validación ─────────────────────────────────────────────────────
 const step1Schema = z.object({
@@ -104,6 +105,12 @@ function renderAiMessageText(content: string) {
 
 // ── Componente principal ──────────────────────────────────────────────────────
 export default function CotizarPage() {
+  usePageSEO({
+    title: 'Cotiza tus Muebles a Medida',
+    description: '¿Tienes un diseño en mente? Envíanos tus medidas, ideas o fotos y los maestros ebanistas de M&D Hijos del Rey lo harán realidad. Cotización de muebles sin compromiso.',
+    path: '/cotizar',
+  });
+
   const [currentStep, setCurrentStep] = useState(1);
   const [step1Data, setStep1Data] = useState<Step1Data | null>(null);
   const [step2Data, setStep2Data] = useState<Step2Data | null>(null);

@@ -31,6 +31,7 @@ import { useWishlistStore } from '@/store/wishlistStore';
 import { useAdminStore } from '@/store/adminStore';
 import { formatPrice } from '@/data/mock';
 import { cn } from '@/lib/utils';
+import { usePageSEO } from '@/hooks/useSEO';
 
 export default function ProductoPage() {
   const { slug } = useParams();
@@ -42,6 +43,30 @@ export default function ProductoPage() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [isZoomed, setIsZoomed] = useState(false);
+
+  // SEO dinámico basado en el producto (con JSON-LD para Google Shopping/Rich Results)
+  usePageSEO(product ? {
+    title: `${product.name} | Muebles Artesanales`,
+    description: product.shortDescription,
+    path: `/producto/${product.slug}`,
+    image: product.images[0],
+    type: 'product',
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: product.name,
+      description: product.description,
+      image: product.images,
+      sku: product.id,
+      offers: {
+        '@type': 'Offer',
+        price: product.price,
+        priceCurrency: 'COP',
+        availability: product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+        url: `https://mydhijosdelrey.com/producto/${product.slug}`
+      }
+    }
+  } : undefined);
 
   if (!product) {
     return (

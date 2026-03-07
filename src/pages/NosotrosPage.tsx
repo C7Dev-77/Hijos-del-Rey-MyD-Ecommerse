@@ -4,6 +4,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { CartDrawer } from '@/components/cart/CartDrawer';
 import { FlipCard } from '@/components/ui/flip-card';
+import { usePageSEO } from '@/hooks/useSEO';
 
 // Clave compartida con el panel de admin para persistir el equipo
 const TEAM_KEY = 'myb_team_members';
@@ -56,6 +57,12 @@ function loadTeam(): TeamMember[] {
 
 
 export default function NosotrosPage() {
+  usePageSEO({
+    title: 'Nuestra Historia — Más de 30 Años de Artesanía',
+    description: 'Conoce la historia de M&D Hijos del Rey, fabricantes de muebles artesanales en Sampués, Sucre, Colombia. Más de 30 años de tradición carpintera, madera sostenible y diseño de excelencia.',
+    path: '/nosotros',
+  });
+
   const timeline = [
     {
       year: '1990',

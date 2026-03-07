@@ -8,11 +8,18 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAdminStore } from '@/store/adminStore';
 import { Link } from 'react-router-dom';
+import { usePageSEO } from '@/hooks/useSEO';
 
 export default function BlogPage() {
   const { blogPosts } = useAdminStore();
   const featuredPost = blogPosts[0];
   const otherPosts = blogPosts.slice(1);
+
+  usePageSEO({
+    title: 'Blog de Decoración y Muebles Artesanales',
+    description: 'Aprende sobre cuidado de madera, tendencias de decoración, y el arte detrás de nuestros muebles hechos a mano en Colombia.',
+    path: '/blog',
+  });
 
   return (
     <div className="min-h-screen bg-background">
