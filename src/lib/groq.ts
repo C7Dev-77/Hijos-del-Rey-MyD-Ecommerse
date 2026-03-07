@@ -1,155 +1,158 @@
-// Servicio de IA usando Groq (modelos Llama 3 - gratis)
-// https://console.groq.com/keys para obtener tu API key
-//
-// ⚠️ NOTA IMPORTANTE SOBRE SEGURIDAD:
-// Esta API key (VITE_GROQ_API_KEY) queda expuesta en el frontend.
-// Para producción real, se debe migrar a una Supabase Edge Function
-// que actúe como proxy server-side. La key NUNCA debe estar en el bundle.
-// Mientras tanto, esta implementación funciona para MVP/demo.
+import { supabase } from './supabase';
 
-const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
+// ─────────────────────────────────────────────────────────────────────────────
+// groq.ts — Servicio del Chatbot IA "Rey"
+//
+// ✅ SEGURO: La API key de Groq vive en una Supabase Edge Function (servidor).
+//           El frontend NUNCA toca la clave directamente.
+//
+// Flujo:
+//   AIChatBot.tsx → sendChatMessage() → Supabase Edge Function "groq-chat"
+//                                               ↓
+//                                       api.groq.com (con la clave segura)
+// ─────────────────────────────────────────────────────────────────────────────
 
 export interface ChatMessage {
-    role: 'system' | 'user' | 'assistant';
+    role: 'user' | 'assistant';
     content: string;
 }
 
-interface StoreInfo {
+export interface StoreContext {
     address?: string;
     whatsapp?: string;
     schedule?: string;
     email?: string;
-    phone?: string;
-    products?: Array<{
-        name: string;
-        price: number;
-        description: string;
-        category: string;
-        slug: string;
-    }>;
+    products?: { name: string; price: number; category: string; slug: string }[];
 }
 
-function buildSystemPrompt(store: StoreInfo = {}): string {
-    const address = store.address || 'Colombia';
-    const whatsapp = store.whatsapp || '+57 300 000 0000';
-    const schedule = store.schedule || 'Lun - Sáb: 9:00 AM - 7:00 PM';
-    const email = store.email || 'info@mydhijosdelrey.com';
-
-    let productsContext = '';
-    if (store.products && store.products.length > 0) {
-        // Limitar a los primeros 20 productos para no exceder el contexto
-        const limitedProducts = store.products.slice(0, 20);
-        productsContext = `\nCatálogo de Productos Actual (${store.products.length} productos en total, mostrando ${limitedProducts.length}):\n` + limitedProducts.map(p =>
-            `- [${p.name}](/producto/${p.slug}) (${p.category}): $${p.price.toLocaleString('es-CO')} COP. ${p.description.substring(0, 80)}...`
-        ).join('\n');
-    }
-
-    return `Eres "Rey", el asistente virtual profesional y servicial de M&D Hijos del Rey, una tienda top de muebles artesanales colombianos.
-
-Tu personalidad:
-- Eres amable, conocedor y te comportas como el mejor asesor de ventas en un e-commerce.
-- Respondes en español de forma natural y atractiva.
-- Usas emojis para darle calidez y estructura a tus mensajes.
-- TUS RESPUESTAS DEBEN ADAPTARSE A LA CONVERSACIÓN: entre 2 y 10 líneas. Evita respuestas de una sola línea si te piden recomendaciones, pero no escribas testamentos.
-- Sé servicial y cortés, enfocándote en las necesidades del cliente.
-
-Tu conocimiento:
-- Especializado en muebles artesanales colombianos: Salas, Comedores, Dormitorios, Poltronas.
-- Conoces sobre maderas colombianas: Roble (muy duradera, para alto tráfico), Cedro (resistente a insectos, aroma natural), Teca (resistente a humedad/exterior), Pino (económica, versátil).
-- Acabados y pintura: Trabajamos con barnices mate, semi-mate y brillante. Colores naturales, tintes oscuros (nogal, wengue) o pinturas poliuretano (blanco, negro, colores personalizados).
-- Tapicería: Telas amigables con mascotas (anti-rasguños), linos, cueros sintéticos y microfibras. Variedad de tonos disponibles.
-- Tiempos de fabricación: Los muebles a medida o personalizados toman entre 15 a 30 días hábiles dependiendo de la complejidad.
-- Estilos de decoración: moderno, rústico, industrial, colonial, escandinavo.
-- Cuidado de muebles: usar paño seco, evitar sol directo, productos sin alcohol, limpiar derrames inmediatamente, hidratar madera una vez al año.
-- Precios base: desde $320.000 COP (accesorios) hasta $4.800.000 COP (comedores). Los personalizados se cotizan por proyecto.${productsContext}
-
-Información de la tienda:
-- Nombre: M&D Hijos del Rey
-- Ubicación: ${address}
-- Horario: ${schedule}
-- WhatsApp: ${whatsapp}
-- Email: ${email}
-- Envío gratis en pedidos > $1.000.000
-- Garantía: 5 años
-- Devoluciones: 30 días
-
-Reglas IMPORTANTES:
-- Actúa como un experto en ventas. Si te preguntan sobre características (ej. maderas duraderas), explica brevemente por qué son buenas opciones (ej. "El Roble es ideal para alto tráfico y la Teca para humedad").
-- AL RECOMENDAR O DAR PRECIOS: Busca SIEMPRE primero en el "Catálogo de Productos Actual" que se te proporciona. Si te piden una recomendación, elige uno de ese catálogo, resalta por qué es ideal, da su precio y MUY IMPORTANTE, manda el enlace usando este formato estricto: [Nombre del Producto](/producto/slug-del-producto) para que el cliente pueda hacer click e ir a comprarlo.
-- Si un producto solicitado no aparece en el "Catálogo de Productos Actual", indica que nuestro catálogo actual en web es limitado, pero ofrecemos muebles a medida y se puede verificar más por WhatsApp.
-- Nunca inventes productos ni precios ni enlaces. Usa EXCLUSIVAMENTE los del "Catálogo de Productos Actual".
-- Si quieren hacer un pedido, generar una cotización final o tienen un requerimiento muy específico, invítalos cordialmente a escribir por WhatsApp: ${whatsapp}.
-- Si te hacen preguntas que NO tienen que ver con muebles, decoración ni la tienda, responde brevemente y amablemente que solo puedes ayudar con temas relacionados a M&D Hijos del Rey.
-- NUNCA des saludos ni despedidas demasiado largas.`;
-}
-
-// Timeout wrapper para fetch
-async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 15000): Promise<Response> {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), timeoutMs);
-    try {
-        const response = await fetch(url, { ...options, signal: controller.signal });
-        return response;
-    } finally {
-        clearTimeout(timeout);
-    }
-}
-
+/**
+ * Envía mensajes al chatbot IA a través de la Supabase Edge Function segura.
+ * Si la función no está desplegada aún, cae en un fallback local.
+ */
 export async function sendChatMessage(
     messages: ChatMessage[],
-    storeInfo?: StoreInfo
+    storeContext?: StoreContext
 ): Promise<string> {
-    if (!GROQ_API_KEY || GROQ_API_KEY === 'tu-groq-api-key-aqui') {
-        return '¡Hola! 👋 Soy Rey, tu asistente virtual. Para activar mi inteligencia artificial, el administrador necesita configurar la API key de Groq en el archivo .env del proyecto.\n\nMientras tanto, puedes contactarnos directamente por WhatsApp haciendo clic en el botón verde de abajo. ¡Estaremos encantados de ayudarte! 🪑✨';
+    try {
+        // ── Llamada a la Edge Function de Supabase ────────────────────────
+        const { data, error } = await supabase.functions.invoke('groq-chat', {
+            body: {
+                messages: messages.slice(-20), // solo últimos 20 mensajes
+                storeContext,
+            },
+        });
+
+        if (error) {
+            console.error('[groq.ts] Edge function error:', error);
+            // Si la función no existe aún, intentamos el fallback directo
+            if (error.message?.includes('not found') || error.message?.includes('404')) {
+                return await sendChatMessageDirect(messages, storeContext);
+            }
+            throw new Error(error.message || 'Error en el servicio de IA');
+        }
+
+        if (!data?.reply) {
+            throw new Error('Respuesta vacía del servidor');
+        }
+
+        return data.reply as string;
+
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+
+        // Mensajes de error amigables al usuario
+        if (message.includes('429')) return 'Estoy recibiendo muchas preguntas ahora mismo. ¡Inténtalo en unos segundos! 🙏';
+        if (message.includes('401')) return 'El servicio de IA no está disponible en este momento. Puedes contactarnos directamente por WhatsApp.';
+        if (message.includes('timeout') || message.includes('fetch')) return 'La conexión tardó demasiado. Verifica tu conexión a internet e inténtalo de nuevo.';
+
+        console.error('[groq.ts] Error:', message);
+        return 'Tuve un problema técnico. Por favor, contáctanos directamente por WhatsApp para una respuesta inmediata. 😊';
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FALLBACK: llamada directa a Groq (solo para desarrollo local antes de
+// desplegar la Edge Function). En producción esto NO debería ejecutarse.
+//
+// ⚠️ ADVERTENCIA: Esto expone VITE_GROQ_API_KEY en el bundle del cliente.
+//    Despliega la Edge Function cuanto antes para eliminar este fallback.
+// ─────────────────────────────────────────────────────────────────────────────
+async function sendChatMessageDirect(
+    messages: ChatMessage[],
+    storeContext?: StoreContext
+): Promise<string> {
+    const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+
+    if (!apiKey) {
+        return 'El servicio de IA no está configurado. Por favor, contáctanos por WhatsApp.';
     }
 
+    // Advertencia solo en desarrollo
+    if (import.meta.env.DEV) {
+        console.warn(
+            '⚠️ [groq.ts] Usando API Key directa (fallback de desarrollo).\n' +
+            'Despliega la Edge Function "groq-chat" para eliminar esta vulnerabilidad:\n' +
+            'npx supabase functions deploy groq-chat'
+        );
+    }
+
+    const systemPrompt = `Eres "Rey", el asistente virtual de M&D Hijos del Rey, tienda artesanal de muebles en Sampués, Sucre, Colombia.
+
+Ayuda a los clientes con:
+- Información de productos: salas, comedores, alcobas, poltronas
+- Precios, materiales y proceso de fabricación artesanal
+- Cotizaciones a medida y proceso de compra
+- Envíos y políticas de entrega
+
+INFORMACIÓN DE CONTACTO:
+- WhatsApp: ${storeContext?.whatsapp || '+57 304 629 7119'}
+- Horario: ${storeContext?.schedule || 'Lunes a Sábado 8am - 6pm'}
+- Email: ${storeContext?.email || 'info@mydhijosdelrey.com'}
+
+PRODUCTOS ACTUALES:
+${storeContext?.products?.slice(0, 20).map(p =>
+        `• ${p.name} — $${p.price?.toLocaleString('es-CO')} COP`
+    ).join('\n') || 'Consulta nuestro catálogo completo en /catalogo'}
+
+REGLAS:
+1. Responde en español colombiano cálido y profesional
+2. Máximo 3 párrafos por respuesta — sé conciso
+3. Puedes crear links a productos: [Nombre](/producto/slug)
+4. Si no puedes ayudar, redirige al WhatsApp
+5. No respondas preguntas no relacionadas con la tienda o muebles`;
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+
     try {
-        const response = await fetchWithTimeout(GROQ_API_URL, {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
+            signal: controller.signal,
             headers: {
+                'Authorization': `Bearer ${apiKey}`,
                 'Content-Type': 'application/json',
-                Authorization: `Bearer ${GROQ_API_KEY}`,
             },
             body: JSON.stringify({
                 model: 'llama-3.3-70b-versatile',
-                messages: [
-                    { role: 'system', content: buildSystemPrompt(storeInfo) },
-                    ...messages,
-                ],
+                messages: [{ role: 'system', content: systemPrompt }, ...messages.slice(-20)],
                 temperature: 0.7,
-                max_tokens: 512,
-                top_p: 0.9,
+                max_tokens: 800,
             }),
         });
 
+        clearTimeout(timeout);
+
         if (!response.ok) {
-            const errorData = await response.json().catch(() => null);
-            console.error('Groq API error:', response.status, errorData);
-
-            if (response.status === 429) {
-                return 'Estoy recibiendo muchas consultas en este momento. Por favor, intenta de nuevo en unos segundos. 🙏';
-            }
-
-            if (response.status === 401) {
-                return 'Hubo un problema de autenticación con mi servicio de IA. El administrador necesita verificar la API key. Mientras tanto, contáctanos por WhatsApp. 💬';
-            }
-
-            if (response.status >= 500) {
-                return 'El servicio de IA está temporalmente fuera de servicio. Por favor, intenta en unos minutos o contáctanos por WhatsApp. 🔧';
-            }
-
-            return 'Disculpa, tuve un problema técnico. ¿Podrías intentar de nuevo? Si el problema persiste, contáctanos por WhatsApp. 💬';
+            if (response.status === 429) throw new Error('429');
+            if (response.status === 401) throw new Error('401');
+            throw new Error(`HTTP ${response.status}`);
         }
 
         const data = await response.json();
-        return data.choices[0]?.message?.content || 'No pude generar una respuesta. ¿Puedes reformular tu pregunta?';
-    } catch (error) {
-        if (error instanceof DOMException && error.name === 'AbortError') {
-            return 'La respuesta tardó demasiado. Por favor, intenta de nuevo con una pregunta más corta. ⏱️';
-        }
+        return data.choices?.[0]?.message?.content || 'Lo siento, no pude generar una respuesta.';
 
-        console.error('Error calling Groq:', error);
-        return `Parece que no tengo conexión en este momento. Puedes contactarnos directamente por WhatsApp al ${storeInfo?.whatsapp || '+57 300 000 0000'}. ¡Con gusto te atendemos! 📱`;
+    } catch (err) {
+        clearTimeout(timeout);
+        throw err;
     }
 }
