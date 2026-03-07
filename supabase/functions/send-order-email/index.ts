@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
 // Supabase Edge Function — send-order-email
 // Se activa automáticamente mediante un Database Webhook de Supabase
@@ -18,36 +19,36 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 const RESEND_API_URL = 'https://api.resend.com/emails';
 
 const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 // ── Traducciones de estado ────────────────────────────────────────────
 const STATUS_LABELS: Record<string, string> = {
-    pending: 'Pendiente de confirmación',
-    processing: 'En preparación',
-    shipped: 'En camino',
-    delivered: 'Entregado',
-    cancelled: 'Cancelado',
+  pending: 'Pendiente de confirmación',
+  processing: 'En preparación',
+  shipped: 'En camino',
+  delivered: 'Entregado',
+  cancelled: 'Cancelado',
 };
 
 const STATUS_COLORS: Record<string, string> = {
-    pending: '#f59e0b',
-    processing: '#3b82f6',
-    shipped: '#8b5cf6',
-    delivered: '#10b981',
-    cancelled: '#ef4444',
+  pending: '#f59e0b',
+  processing: '#3b82f6',
+  shipped: '#8b5cf6',
+  delivered: '#10b981',
+  cancelled: '#ef4444',
 };
 
 // ── Generador de emails HTML ──────────────────────────────────────────
 function buildCustomerEmail(order: Record<string, unknown>, isNew: boolean): string {
-    const status = order.status as string || 'pending';
-    const orderId = (order.id as string || '').slice(0, 8).toUpperCase();
-    const total = (order.total as number || 0).toLocaleString('es-CO');
-    const statusText = STATUS_LABELS[status] || status;
-    const statusColor = STATUS_COLORS[status] || '#5C3D2E';
+  const status = order.status as string || 'pending';
+  const orderId = (order.id as string || '').slice(0, 8).toUpperCase();
+  const total = (order.total as number || 0).toLocaleString('es-CO');
+  const statusText = STATUS_LABELS[status] || status;
+  const statusColor = STATUS_COLORS[status] || '#5C3D2E';
 
-    return `
+  return `
 <!DOCTYPE html>
 <html lang="es">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -69,9 +70,9 @@ function buildCustomerEmail(order: Record<string, unknown>, isNew: boolean): str
       </h2>
       <p style="color:#6B5744; line-height:1.6; margin:0 0 24px;">
         ${isNew
-            ? 'Gracias por tu compra. Hemos registrado tu pedido y lo estamos procesando con cuidado.'
-            : `El estado de tu pedido ha sido actualizado.`
-        }
+      ? 'Gracias por tu compra. Hemos registrado tu pedido y lo estamos procesando con cuidado.'
+      : `El estado de tu pedido ha sido actualizado.`
+    }
       </p>
 
       <!-- Order Info Box -->
@@ -123,13 +124,13 @@ function buildCustomerEmail(order: Record<string, unknown>, isNew: boolean): str
 }
 
 function buildAdminEmail(order: Record<string, unknown>, isNew: boolean): string {
-    const status = order.status as string || 'pending';
-    const orderId = (order.id as string || '').slice(0, 8).toUpperCase();
-    const total = (order.total as number || 0).toLocaleString('es-CO');
-    const method = order.payment_method as string || 'No especificado';
-    const address = order.shipping_address as string || 'No especificado';
+  const status = order.status as string || 'pending';
+  const orderId = (order.id as string || '').slice(0, 8).toUpperCase();
+  const total = (order.total as number || 0).toLocaleString('es-CO');
+  const method = order.payment_method as string || 'No especificado';
+  const address = order.shipping_address as string || 'No especificado';
 
-    return `
+  return `
 <!DOCTYPE html><html lang="es"><body style="font-family:sans-serif;background:#f5f5f5;padding:20px;">
   <div style="max-width:500px;margin:0 auto;background:#fff;border-radius:12px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,0.1);">
     <h2 style="color:#5C3D2E;margin:0 0 16px;">${isNew ? '🛍️ Nuevo Pedido' : '🔄 Pedido Actualizado'} — #${orderId}</h2>
@@ -148,70 +149,70 @@ function buildAdminEmail(order: Record<string, unknown>, isNew: boolean): string
 
 // ── Servidor principal ────────────────────────────────────────────────
 serve(async (req) => {
-    if (req.method === 'OPTIONS') {
-        return new Response('ok', { headers: corsHeaders });
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
+  try {
+    const payload = await req.json();
+    const order = payload.record as Record<string, unknown>;
+    const isNew = payload.type === 'INSERT';
+
+    if (!order) {
+      return new Response(JSON.stringify({ error: 'No order data' }), { status: 400, headers: corsHeaders });
     }
 
-    try {
-        const payload = await req.json();
-        const order = payload.record as Record<string, unknown>;
-        const isNew = payload.type === 'INSERT';
-
-        if (!order) {
-            return new Response(JSON.stringify({ error: 'No order data' }), { status: 400, headers: corsHeaders });
-        }
-
-        const resendKey = Deno.env.get('RESEND_API_KEY');
-        if (!resendKey) {
-            console.warn('RESEND_API_KEY no configurada — emails deshabilitados');
-            return new Response(JSON.stringify({ message: 'Email omitido: RESEND_API_KEY no configurada' }), { status: 200 });
-        }
-
-        const ADMIN_EMAIL = Deno.env.get('ADMIN_EMAIL') || 'info@mydhijosdelrey.com';
-        const FROM_EMAIL = Deno.env.get('FROM_EMAIL') || 'noreply@mydhijosdelrey.com';
-        const customerEmail = order.customer_email as string;
-
-        const sendEmail = async (to: string, subject: string, html: string) => {
-            const res = await fetch(RESEND_API_URL, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ from: `M&D Hijos del Rey <${FROM_EMAIL}>`, to, subject, html }),
-            });
-            if (!res.ok) console.error('Resend error:', await res.text());
-            return res.ok;
-        };
-
-        const orderId = (order.id as string || '').slice(0, 8).toUpperCase();
-        const promises = [];
-
-        // Email al admin siempre
-        promises.push(sendEmail(
-            ADMIN_EMAIL,
-            `${isNew ? '🛍️ Nuevo Pedido' : '🔄 Pedido Actualizado'} #${orderId}`,
-            buildAdminEmail(order, isNew)
-        ));
-
-        // Email al cliente si tiene correo
-        if (customerEmail) {
-            promises.push(sendEmail(
-                customerEmail,
-                isNew ? `✅ Pedido confirmado #${orderId} — M&D Hijos del Rey` : `📦 Actualización de tu pedido #${orderId}`,
-                buildCustomerEmail(order, isNew)
-            ));
-        }
-
-        await Promise.all(promises);
-
-        return new Response(
-            JSON.stringify({ success: true, message: `${promises.length} email(s) enviado(s)` }),
-            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-
-    } catch (err) {
-        console.error('Error en send-order-email:', err);
-        return new Response(
-            JSON.stringify({ error: String(err) }),
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+    const resendKey = Deno.env.get('RESEND_API_KEY');
+    if (!resendKey) {
+      console.warn('RESEND_API_KEY no configurada — emails deshabilitados');
+      return new Response(JSON.stringify({ message: 'Email omitido: RESEND_API_KEY no configurada' }), { status: 200 });
     }
+
+    const ADMIN_EMAIL = Deno.env.get('ADMIN_EMAIL') || 'info@mydhijosdelrey.com';
+    const FROM_EMAIL = Deno.env.get('FROM_EMAIL') || 'noreply@mydhijosdelrey.com';
+    const customerEmail = order.customer_email as string;
+
+    const sendEmail = async (to: string, subject: string, html: string) => {
+      const res = await fetch(RESEND_API_URL, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from: `M&D Hijos del Rey <${FROM_EMAIL}>`, to, subject, html }),
+      });
+      if (!res.ok) console.error('Resend error:', await res.text());
+      return res.ok;
+    };
+
+    const orderId = (order.id as string || '').slice(0, 8).toUpperCase();
+    const promises = [];
+
+    // Email al admin siempre
+    promises.push(sendEmail(
+      ADMIN_EMAIL,
+      `${isNew ? '🛍️ Nuevo Pedido' : '🔄 Pedido Actualizado'} #${orderId}`,
+      buildAdminEmail(order, isNew)
+    ));
+
+    // Email al cliente si tiene correo
+    if (customerEmail) {
+      promises.push(sendEmail(
+        customerEmail,
+        isNew ? `✅ Pedido confirmado #${orderId} — M&D Hijos del Rey` : `📦 Actualización de tu pedido #${orderId}`,
+        buildCustomerEmail(order, isNew)
+      ));
+    }
+
+    await Promise.all(promises);
+
+    return new Response(
+      JSON.stringify({ success: true, message: `${promises.length} email(s) enviado(s)` }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (err) {
+    console.error('Error en send-order-email:', err);
+    return new Response(
+      JSON.stringify({ error: String(err) }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
 });

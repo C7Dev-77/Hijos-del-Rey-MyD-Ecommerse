@@ -32,6 +32,7 @@ import { Badge } from '@/components/ui/badge';
 
 declare global {
   interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     WidgetCheckout: any;
   }
 }
@@ -72,8 +73,6 @@ export default function CheckoutPage() {
     }
   }, [isAuthenticated, authLoading, navigate]);
 
-  if (authLoading) return <div className="min-h-screen flex items-center justify-center">Cargando...</div>;
-
   const {
     register,
     handleSubmit,
@@ -81,6 +80,8 @@ export default function CheckoutPage() {
   } = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutSchema),
   });
+
+  if (authLoading) return <div className="min-h-screen flex items-center justify-center">Cargando...</div>;
 
   const subtotal = getTotal();
   const shipping = deliveryMethod === 'agencia' ? 0 : (subtotal > 1000000 ? 0 : 80000);
@@ -159,6 +160,7 @@ export default function CheckoutPage() {
           }
         });
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         checkout.open((result: any) => {
           const transaction = result.transaction;
           if (transaction.status === 'APPROVED') {

@@ -14,16 +14,16 @@ export default function BlogPostPage() {
 
     const post = blogPosts.find((p) => p.slug === slug);
 
+    usePageSEO({
+        title: post ? `${post.title} | Blog M&D Hijos del Rey` : 'Blog M&D Hijos del Rey',
+        description: post?.excerpt || '',
+        path: post ? `/blog/${post.slug}` : '/blog',
+        image: post?.image || '',
+    });
+
     if (!post) {
         return <Navigate to="/blog" replace />;
     }
-
-    usePageSEO({
-        title: `${post.title} | Blog M&D Hijos del Rey`,
-        description: post.excerpt,
-        path: `/blog/${post.slug}`,
-        image: post.image,
-    });
 
     const handleShare = () => {
         const url = window.location.href;

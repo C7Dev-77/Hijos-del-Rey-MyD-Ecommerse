@@ -29,6 +29,7 @@ function loadChatHistory(): DisplayMessage[] {
         const saved = sessionStorage.getItem(SESSION_KEY);
         if (saved) {
             const parsed = JSON.parse(saved);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             return parsed.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) }));
         }
     } catch { /* ignore */ }

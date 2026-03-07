@@ -12,14 +12,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useAdminStore } from '@/store/adminStore';
+import { CATEGORIES } from '@/data/mock';
 
 export function Footer() {
-  const { contactInfo, products } = useAdminStore();
-
-  // Categorías únicas a partir de los productos reales
-  const categories = Array.from(
-    new Set(products.map((p) => p.category))
-  ).filter(Boolean).slice(0, 6);
+  const { contactInfo } = useAdminStore();
 
   const currentYear = new Date().getFullYear();
 
@@ -125,38 +121,23 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Categories — dinámicas desde los productos reales */}
+          {/* Categories — estáticas desde CATEGORIES */}
           <div>
             <h3 className="font-display text-lg font-semibold mb-6">
               Categorías
             </h3>
             <ul className="space-y-3">
-              {categories.length > 0 ? (
-                categories.map((cat) => (
-                  <li key={cat}>
-                    <Link
-                      to={`/catalogo?categoria=${encodeURIComponent(cat)}`}
-                      className="text-cream/70 hover:text-gold transition-colors text-sm flex items-center group"
-                    >
-                      <ArrowRight className="h-4 w-4 mr-2 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-                      {cat}
-                    </Link>
-                  </li>
-                ))
-              ) : (
-                // Fallback mientras los productos carguen
-                ['Salas', 'Comedores', 'Alcobas', 'Poltronas', 'Decoración'].map((cat) => (
-                  <li key={cat}>
-                    <Link
-                      to={`/catalogo?categoria=${cat.toLowerCase()}`}
-                      className="text-cream/70 hover:text-gold transition-colors text-sm flex items-center group"
-                    >
-                      <ArrowRight className="h-4 w-4 mr-2 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-                      {cat}
-                    </Link>
-                  </li>
-                ))
-              )}
+              {CATEGORIES.map((cat) => (
+                <li key={cat.id}>
+                  <Link
+                    to={`/catalogo?categoria=${cat.slug}`}
+                    className="text-cream/70 hover:text-gold transition-colors text-sm flex items-center group"
+                  >
+                    <ArrowRight className="h-4 w-4 mr-2 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                    {cat.name}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 

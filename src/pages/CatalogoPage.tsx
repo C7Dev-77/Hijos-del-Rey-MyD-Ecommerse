@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -144,6 +144,13 @@ export default function CatalogoPage() {
     searchParams.get('categoria') ? [searchParams.get('categoria')!] : []
   );
 
+  useEffect(() => {
+    const cat = searchParams.get('categoria');
+    if (cat) {
+      setSelectedCategories([cat]);
+    }
+  }, [searchParams]);
+
   const activeCategoryName = selectedCategories.length === 1
     ? CATEGORIES.find(c => c.slug === selectedCategories[0])?.name
     : null;
@@ -232,6 +239,7 @@ export default function CatalogoPage() {
     setPriceRange([0, 6000000]);
     setInStockOnly(false);
     setSortBy('featured');
+    setSearchParams({}); // Quitar el parámetro de la URL
   };
 
   const filtersProps = {

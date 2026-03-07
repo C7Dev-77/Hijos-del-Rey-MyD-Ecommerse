@@ -22,6 +22,7 @@ export interface StoreContext {
     whatsapp?: string;
     schedule?: string;
     email?: string;
+    phone?: string;
     products?: { name: string; price: number; category: string; slug: string }[];
 }
 

@@ -644,7 +644,10 @@ function OrdersTab() {
     toast.success(`Estado actualizado a: ${getStatusLabel(newStatus)}`);
     // Actualizar el modal si está abierto
     if (selectedOrder?.id === orderId) {
-      setSelectedOrder({ ...selectedOrder, status: newStatus });
+      setSelectedOrder({
+        ...selectedOrder,
+        status: newStatus as Order['status']
+      });
     }
   };
 

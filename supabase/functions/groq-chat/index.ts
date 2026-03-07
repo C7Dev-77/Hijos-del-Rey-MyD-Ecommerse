@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
 // Supabase Edge Function — groq-chat
 // Actúa como proxy seguro para la API de Groq.

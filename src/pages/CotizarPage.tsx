@@ -229,31 +229,37 @@ export default function CotizarPage() {
       createdAt: new Date().toLocaleDateString('es-CO'),
     });
 
-    const message =
-      `¡Hola M&D Hijos del Rey! 👋%0A%0A` +
-      `Solicito cotización (Ref: ${quoteId}):%0A%0A` +
-      `👤 *Datos:*%0A` +
-      `• Nombre: ${step1Data?.name}%0A` +
-      `• Tel: ${step1Data?.phone}%0A` +
-      `• Ciudad: ${step1Data?.city}%0A%0A` +
-      `🛋️ *Mueble:*%0A` +
-      `• Tipo: ${step2Data?.furnitureType}%0A` +
-      `${step2Data?.width ? `• Medidas: ${step2Data.width}×${step2Data.height}×${step2Data.depth} cm%0A` : ''}` +
-      `${step2Data?.material ? `• Material: ${step2Data.material}%0A` : ''}` +
-      `${styleSelected ? `• Estilo: ${styleSelected}%0A` : ''}` +
-      `• Idea: ${step2Data?.description}%0A%0A` +
+    // Usar \n en lugar de %0A, y encodear todo adecuadamente
+    const messageRaw =
+      `¡Hola M&D Hijos del Rey! 👋\n\n` +
+      `Solicito cotización (Ref: ${quoteId}):\n\n` +
+      `👤 *Datos:*\n` +
+      `• Nombre: ${step1Data?.name}\n` +
+      `• Tel: ${step1Data?.phone}\n` +
+      `• Ciudad: ${step1Data?.city}\n\n` +
+      `🛋️ *Mueble:*\n` +
+      `• Tipo: ${step2Data?.furnitureType}\n` +
+      `${step2Data?.width ? `• Medidas: ${step2Data.width}×${step2Data.height}×${step2Data.depth} cm\n` : ''}` +
+      `${step2Data?.material ? `• Material: ${step2Data.material}\n` : ''}` +
+      `${styleSelected ? `• Estilo: ${styleSelected}\n` : ''}` +
+      `• Idea: ${step2Data?.description}\n\n` +
       `📷 Imágenes adjuntas: ${uploadedImages.length > 0 ? `${uploadedImages.length} imagen(es) compartida(s) en la web` : 'Sin imágenes'}`;
 
     const phone = contactInfo.whatsapp.replace(/\D/g, '') || '573001234567';
-    window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(messageRaw)}`, '_blank');
 
-    toast({ title: '🎉 ¡Cotización enviada!', description: 'Te redirigimos a WhatsApp con todos los detalles.' });
+    toast({ title: '🎉 ¡Redirigiendo a WhatsApp!', description: 'Envía el mensaje pre-escrito para continuar.' });
     setIsSubmitting(false);
+
+    // Enviar al paso de "Éxito"
+    setCurrentStep(5);
+
+    // Limpiar los datos en el fondo (opcional) pero dejamos un rato antes de limpiar por si el usuario vuelve
     setTimeout(() => {
-      setCurrentStep(1); setStep1Data(null); setStep2Data(null);
+      setStep1Data(null); setStep2Data(null);
       setUploadedImages([]); setStyleSelected('');
       step1Form.reset(); step2Form.reset();
-    }, 1500);
+    }, 1000);
   };
 
   return (
@@ -297,39 +303,41 @@ export default function CotizarPage() {
         <div className="container mx-auto px-4 lg:px-8 max-w-5xl">
 
           {/* ── Progress Steps ── */}
-          <div className="mb-10">
-            <div className="flex items-center">
-              {steps.map((step, index) => (
-                <div key={step.number} className="flex items-center flex-1 last:flex-none">
-                  <div className="flex flex-col items-center">
-                    <motion.div
-                      animate={{
-                        backgroundColor: currentStep >= step.number ? 'hsl(var(--primary))' : 'hsl(var(--muted))',
-                        scale: currentStep === step.number ? 1.15 : 1,
-                      }}
-                      className={cn(
-                        'w-11 h-11 rounded-full flex items-center justify-center ring-4 ring-offset-2 ring-transparent transition-all',
-                        currentStep >= step.number ? 'text-primary-foreground ring-primary/20' : 'text-muted-foreground'
-                      )}
-                    >
-                      {currentStep > step.number ? <Check className="h-5 w-5" /> : <step.icon className="h-5 w-5" />}
-                    </motion.div>
-                    <span className="text-xs mt-2 font-medium text-center hidden sm:block">
-                      <span className={currentStep === step.number ? 'text-primary' : 'text-muted-foreground'}>
-                        {step.title}
+          {currentStep < 5 && (
+            <div className="mb-10">
+              <div className="flex items-center">
+                {steps.map((step, index) => (
+                  <div key={step.number} className="flex items-center flex-1 last:flex-none">
+                    <div className="flex flex-col items-center">
+                      <motion.div
+                        animate={{
+                          backgroundColor: currentStep >= step.number ? 'hsl(var(--primary))' : 'hsl(var(--muted))',
+                          scale: currentStep === step.number ? 1.15 : 1,
+                        }}
+                        className={cn(
+                          'w-11 h-11 rounded-full flex items-center justify-center ring-4 ring-offset-2 ring-transparent transition-all',
+                          currentStep >= step.number ? 'text-primary-foreground ring-primary/20' : 'text-muted-foreground'
+                        )}
+                      >
+                        {currentStep > step.number ? <Check className="h-5 w-5" /> : <step.icon className="h-5 w-5" />}
+                      </motion.div>
+                      <span className="text-xs mt-2 font-medium text-center hidden sm:block">
+                        <span className={currentStep === step.number ? 'text-primary' : 'text-muted-foreground'}>
+                          {step.title}
+                        </span>
                       </span>
-                    </span>
+                    </div>
+                    {index < steps.length - 1 && (
+                      <div className={cn(
+                        'flex-1 h-1 mx-2 rounded-full transition-all duration-500',
+                        currentStep > step.number ? 'bg-primary' : 'bg-muted'
+                      )} />
+                    )}
                   </div>
-                  {index < steps.length - 1 && (
-                    <div className={cn(
-                      'flex-1 h-1 mx-2 rounded-full transition-all duration-500',
-                      currentStep > step.number ? 'bg-primary' : 'bg-muted'
-                    )} />
-                  )}
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="grid lg:grid-cols-3 gap-8">
             {/* ── Main Form ── */}
@@ -649,6 +657,30 @@ export default function CotizarPage() {
                       <Button onClick={handleFinalSubmit} disabled={isSubmitting} size="lg"
                         className="bg-gold text-charcoal hover:bg-gold/90 font-bold px-8">
                         {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Enviando…</> : <>Enviar por WhatsApp <Send className="ml-2 h-4 w-4" /></>}
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* ── STEP 5: Éxito ── */}
+                {currentStep === 5 && (
+                  <motion.div key="step5" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                    className="bg-card border border-border rounded-2xl p-12 text-center flex flex-col items-center justify-center min-h-[400px]">
+                    <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center mb-6 ring-8 ring-emerald-50">
+                      <Check className="h-10 w-10 text-emerald-600" />
+                    </div>
+                    <h2 className="font-display text-3xl font-bold mb-4 text-charcoal">¡Gracias por tu solicitud!</h2>
+                    <p className="text-muted-foreground max-w-sm mb-8">
+                      Hemos intentado abrir WhatsApp con todos los detalles.
+                      <strong className="text-charcoal block mt-2">Por favor, envía el mensaje que se generó en el chat.</strong>
+                      Un maestro ebanista revisará tu idea y te responderemos a la mayor brevedad posible.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+                      <Button asChild onClick={() => setCurrentStep(1)} size="lg" className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-wood-light">
+                        <Link to="/catalogo">Seguir Explorando</Link>
+                      </Button>
+                      <Button variant="outline" onClick={() => setCurrentStep(1)} size="lg" className="w-full sm:w-auto">
+                        Cotizar otro mueble
                       </Button>
                     </div>
                   </motion.div>
