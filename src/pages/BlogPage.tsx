@@ -95,8 +95,8 @@ export default function BlogPage() {
                 frontSubtitle={`${featuredPost.readTime} min de lectura • ${featuredPost.category}`}
                 backTitle={featuredPost.title}
                 backContent={featuredPost.excerpt + ' ' + featuredPost.content.slice(0, 300) + '...'}
-                fullContent={featuredPost.content}
                 backButtonText="Leer Artículo Completo"
+                backButtonLink={`/blog/${featuredPost.slug}`}
                 className="aspect-[4/3]"
               />
             </motion.div>
@@ -123,8 +123,8 @@ export default function BlogPage() {
                       frontSubtitle={`${post.readTime} min • ${post.category}`}
                       backTitle={post.title}
                       backContent={post.excerpt}
-                      fullContent={post.content}
                       backButtonText="Leer Artículo Completo"
+                      backButtonLink={`/blog/${post.slug}`}
                     />
                   </motion.div>
                 ))}

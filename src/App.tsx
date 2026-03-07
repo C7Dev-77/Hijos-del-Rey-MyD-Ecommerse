@@ -9,6 +9,7 @@ import { ProtectedRoute } from "./components/layout/ProtectedRoute";
 import { useAuthStore } from "./store/authStore";
 import { useAdminStore } from "./store/adminStore";
 import { useSEO } from "./hooks/useSEO";
+import { useRealtimeOrders } from "./hooks/useRealtimeOrders";
 import { WhatsAppButton } from "./components/chat/WhatsAppButton";
 import { AIChatBot } from "./components/chat/AIChatBot";
 
@@ -19,6 +20,7 @@ const ProductoPage = lazy(() => import("./pages/ProductoPage"));
 const NosotrosPage = lazy(() => import("./pages/NosotrosPage"));
 const ContactoPage = lazy(() => import("./pages/ContactoPage"));
 const BlogPage = lazy(() => import("./pages/BlogPage"));
+const BlogPostPage = lazy(() => import("./pages/BlogPostPage"));
 const CotizarPage = lazy(() => import("./pages/CotizarPage"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const RegistroPage = lazy(() => import("./pages/RegistroPage"));
@@ -70,6 +72,9 @@ function AppWithAuth() {
   // Sincronizar SEO globalmente desde Supabase
   useSEO();
 
+  // Escuchar cambios en los pedidos en tiempo real
+  useRealtimeOrders();
+
   // Inicializar Supabase Auth y cargar datos al arrancar la app
   useEffect(() => {
     initialize();
@@ -90,6 +95,7 @@ function AppWithAuth() {
           <Route path="/nosotros" element={<NosotrosPage />} />
           <Route path="/contacto" element={<ContactoPage />} />
           <Route path="/blog" element={<BlogPage />} />
+          <Route path="/blog/:slug" element={<BlogPostPage />} />
           <Route path="/cotizar" element={<CotizarPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/registro" element={<RegistroPage />} />

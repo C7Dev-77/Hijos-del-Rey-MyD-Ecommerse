@@ -30,6 +30,7 @@ import { useCartStore } from '@/store/cartStore';
 import { useWishlistStore } from '@/store/wishlistStore';
 import { useAdminStore } from '@/store/adminStore';
 import { formatPrice } from '@/data/mock';
+import { ProductReviews } from '@/components/store/ProductReviews'; // Nuevo componente
 import { cn } from '@/lib/utils';
 import { usePageSEO } from '@/hooks/useSEO';
 
@@ -227,8 +228,8 @@ export default function ProductoPage() {
                     </svg>
                   ))}
                 </div>
-                <span className="text-sm text-muted-foreground">
-                  {product.rating} ({product.reviewCount} reseñas)
+                <span className="text-sm text-muted-foreground group-hover:text-gold transition-colors cursor-pointer" onClick={() => document.getElementById('reviews-section')?.scrollIntoView({ behavior: 'smooth' })}>
+                  {product.rating} (Ver Reseñas)
                 </span>
               </div>
 
@@ -387,11 +388,26 @@ export default function ProductoPage() {
               {/* Share */}
               <div className="flex items-center gap-4">
                 <span className="text-sm text-muted-foreground">Compartir:</span>
-                <Button variant="ghost" size="icon">
+                <Button
+                  variant="outline"
+                  className="gap-2 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 border-green-200"
+                  onClick={() => {
+                    if (!product) return;
+                    const url = window.location.href;
+                    const text = `¡Mira este increíble producto de M&D Hijos del Rey!\n\n*${product.name}* - ${formatPrice(product.price)}\n\n`;
+                    window.open(`https://wa.me/?text=${encodeURIComponent(text + url)}`, '_blank');
+                  }}
+                >
                   <Share2 className="h-4 w-4" />
+                  WhatsApp
                 </Button>
               </div>
             </div>
+          </div>
+
+          {/* Seccion de Reseñas Reales */}
+          <div id="reviews-section">
+            {product && <ProductReviews productId={product.id} />}
           </div>
 
           {/* Related Products */}

@@ -4,6 +4,7 @@ import { ArrowRight, X } from 'lucide-react';
 import { Button } from './button';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { useNavigate } from 'react-router-dom';
 
 interface FlipCardProps {
   frontImage: string;
@@ -33,13 +34,18 @@ export function FlipCard({
 }: FlipCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const navigate = useNavigate();
 
   const handleFlip = () => setIsFlipped(!isFlipped);
 
   const handleOpenModal = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (backButtonLink) {
-      window.location.href = backButtonLink;
+      if (backButtonLink.startsWith('http')) {
+        window.open(backButtonLink, '_blank');
+      } else {
+        navigate(backButtonLink);
+      }
     } else {
       setShowModal(true);
     }

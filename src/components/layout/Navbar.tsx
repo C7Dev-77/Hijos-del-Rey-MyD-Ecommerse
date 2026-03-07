@@ -23,6 +23,7 @@ import { useCartStore } from '@/store/cartStore';
 import { useWishlistStore } from '@/store/wishlistStore';
 import { useAuthStore } from '@/store/authStore';
 import { cn } from '@/lib/utils';
+import { SearchModal } from './SearchModal';
 
 const navLinks = [
   { name: 'Inicio', href: '/' },
@@ -36,6 +37,7 @@ const navLinks = [
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const location = useLocation();
 
   const { openCart, getItemCount } = useCartStore();
@@ -50,6 +52,17 @@ export function Navbar() {
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setIsSearchOpen(true);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   useEffect(() => {
@@ -105,11 +118,16 @@ export function Navbar() {
           {/* Right Actions */}
           <div className="flex items-center space-x-4">
             {/* Search */}
-            <Link to="/catalogo">
-              <Button variant="ghost" size="icon" className={cn(textColor, 'hover:text-gold hover:bg-transparent')}>
-                <Search className="h-5 w-5" />
-              </Button>
-            </Link>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn(textColor, 'hover:text-gold hover:bg-transparent flex items-center justify-center')}
+              onClick={() => setIsSearchOpen(true)}
+              aria-label="Buscar productos (Ctrl+K)"
+            >
+              <Search className="h-5 w-5" />
+            </Button>
+            <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
 
             {/* Wishlist */}
             <Link to="/favoritos">
