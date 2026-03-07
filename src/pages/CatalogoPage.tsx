@@ -136,18 +136,27 @@ const FiltersContent = ({
 
 export default function CatalogoPage() {
   const { products: allProducts } = useAdminStore();
-
-  usePageSEO({
-    title: 'Catálogo de Muebles Artesanales',
-    description: 'Explora el catálogo completo de muebles artesanales de M&D Hijos del Rey. Salas, comedores, alcobas, poltronas y decoración. Muebles colombianos de madera de alta calidad con envío a todo el país.',
-    path: '/catalogo',
-  });
   const [searchParams, setSearchParams] = useSearchParams();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [priceRange, setPriceRange] = useState([0, 6000000]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>(
     searchParams.get('categoria') ? [searchParams.get('categoria')!] : []
   );
+
+  const activeCategoryName = selectedCategories.length === 1
+    ? CATEGORIES.find(c => c.slug === selectedCategories[0])?.name
+    : null;
+
+  usePageSEO({
+    title: activeCategoryName
+      ? `Comprar ${activeCategoryName} de Madera`
+      : 'Catálogo de Muebles Artesanales',
+    description: activeCategoryName
+      ? `Descubre nuestro catálogo exclusivo de ${activeCategoryName.toLowerCase()} hechos a mano. Diseños únicos en madera con envío garantizado.`
+      : 'Explora el catálogo completo de muebles artesanales de M&D Hijos del Rey. Salas, comedores, alcobas, poltronas y decoración. Muebles colombianos de madera de alta calidad con envío a todo el país.',
+    path: activeCategoryName ? `/catalogo?categoria=${selectedCategories[0]}` : '/catalogo',
+  });
   const [inStockOnly, setInStockOnly] = useState(false);
   const [sortBy, setSortBy] = useState('featured');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
