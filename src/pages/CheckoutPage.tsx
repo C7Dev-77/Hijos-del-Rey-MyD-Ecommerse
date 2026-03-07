@@ -91,24 +91,34 @@ export default function CheckoutPage() {
 
     if (paymentMethod === 'wompi') {
       try {
-        // Validar que la llave de Wompi esté configurada
+        // Validar que la llave de Wompi esté configurada correctamente
         const wompiPublicKey = import.meta.env.VITE_WOMPI_PUBLIC_KEY;
-        if (!wompiPublicKey || wompiPublicKey === '' || wompiPublicKey.includes('PEGA_TU')) {
+        const isKeyInvalid =
+          !wompiPublicKey ||
+          wompiPublicKey === '' ||
+          wompiPublicKey.includes('PEGA_TU') ||
+          // Detecta el formato incorrecto 'pub_prod_pub_test_...' que mezcla ambos prefijos
+          (wompiPublicKey.startsWith('pub_prod_') && wompiPublicKey.includes('pub_test')) ||
+          (!wompiPublicKey.startsWith('pub_test_') && !wompiPublicKey.startsWith('pub_prod_'));
+
+        if (isKeyInvalid) {
           setIsProcessing(false);
           toast({
-            title: "Pasarela de pago no configurada",
-            description: "Contacta al administrador. Puedes usar WhatsApp para realizar tu pedido.",
+            title: "Llave de pago incorrecta",
+            description: "La llave de Wompi tiene un formato incorrecto. Mientras, puedes pagar por WhatsApp o transferencia.",
             variant: "destructive"
           });
           return;
         }
-        if (wompiPublicKey.startsWith('pub_test_')) {
+
+        const isSandbox = wompiPublicKey.startsWith('pub_test_');
+        if (isSandbox) {
           toast({
-            title: "⚠️ Modo Sandbox activo",
-            description: "Wompi está en modo de PRUEBA. Los pagos no son reales.",
+            title: "🧪 Modo Sandbox — Cuenta en revisión",
+            description: "Wompi está en modo de PRUEBA. Los cobros no son reales hasta que Wompi apruebe tu cuenta.",
             variant: "default"
           });
-          // Continúa de todas formas, útil para desarrollo/staging
+          // Sigue el flujo — útil para probar la integración completa
         }
 
         const reference = `ORDER-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
