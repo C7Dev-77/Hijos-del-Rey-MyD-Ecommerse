@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  LayoutDashboard, Package, ShoppingCart, FileText, Phone, LogOut,
+  LayoutDashboard, Package, ShoppingCart, FileText, LogOut,
   TrendingUp, DollarSign, Eye, Menu, X, Plus, Pencil, Trash2,
   Save, Image as ImageIcon, Search, Home, Clock, Truck, CheckCircle2,
-  XCircle, MapPin, CreditCard, User, ChevronRight,
-  Filter, RefreshCw, PackageOpen, AlertTriangle, Settings, ClipboardList
+  XCircle, MapPin, CreditCard, User, ChevronRight, Phone,
+  Filter, RefreshCw, PackageOpen, AlertTriangle, Settings, ClipboardList, Users2
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { Button } from '@/components/ui/button';
@@ -39,13 +39,13 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useAuthStore } from '@/store/authStore';
-import { useAdminStore, Quote } from '@/store/adminStore';
+import { useAdminStore, Quote, type AboutPageContent, type HomePageContent, type TimelineItem, type ValueItem, type TeamMember } from '@/store/adminStore';
 import { CATEGORIES, formatPrice, Product, BlogPost, Order } from '@/data/mock';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import HomeContentTab from '@/components/admin/HomeContentTab';
 
-type AdminTab = 'dashboard' | 'products' | 'orders' | 'blog' | 'quotes' | 'home';
+type AdminTab = 'dashboard' | 'products' | 'orders' | 'blog' | 'quotes' | 'home' | 'config' | 'nosotros';
 
 export default function AdminPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -70,8 +70,10 @@ export default function AdminPage() {
     { id: 'products' as AdminTab, label: 'Productos', icon: Package },
     { id: 'orders' as AdminTab, label: 'Pedidos', icon: ShoppingCart },
     { id: 'quotes' as AdminTab, label: 'Cotizaciones', icon: ClipboardList },
+    { id: 'home' as AdminTab, label: 'Inicio', icon: Home },
+    { id: 'nosotros' as AdminTab, label: 'Nosotros', icon: Users2 },
     { id: 'blog' as AdminTab, label: 'Blog', icon: FileText },
-    { id: 'home' as AdminTab, label: 'Configuración', icon: Settings },
+    { id: 'config' as AdminTab, label: 'Configuración', icon: Settings },
   ];
 
   return (
@@ -121,7 +123,9 @@ export default function AdminPage() {
                 orders: 'Pedidos',
                 quotes: 'Cotizaciones',
                 blog: 'Blog',
-                home: 'Configuración',
+                home: 'Página Inicio',
+                nosotros: 'Página Nosotros',
+                config: 'Configuración General',
               }[activeTab] ?? activeTab}
             </h1>
             <p className="text-muted-foreground">Bienvenido, {user?.user_metadata?.name || user?.email}</p>
@@ -137,7 +141,9 @@ export default function AdminPage() {
           {activeTab === 'orders' && <OrdersTab key="orders" />}
           {activeTab === 'quotes' && <QuotesTab key="quotes" />}
           {activeTab === 'blog' && <BlogTab key="blog" />}
-          {activeTab === 'home' && <HomeContentTab key="home" />}
+          {activeTab === 'nosotros' && <NosotrosTab key="nosotros" />}
+          {activeTab === 'home' && <HomeTab key="home" />}
+          {activeTab === 'config' && <HomeContentTab key="config" />}
         </AnimatePresence>
       </main>
     </div>
@@ -352,6 +358,101 @@ function DashboardTab() {
           </div>
         )}
       </div>
+    </motion.div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────
+// Home Tab — Editor de la página de Inicio
+// ─────────────────────────────────────────────────────────
+function HomeTab() {
+  const { homePageContent: h, updateHomePageContent } = useAdminStore();
+  const [form, setForm] = useState<HomePageContent>({ ...h });
+
+  const setField = <K extends keyof HomePageContent>(key: K, value: HomePageContent[K]) =>
+    setForm(prev => ({ ...prev, [key]: value }));
+
+  const handleSave = () => {
+    updateHomePageContent(form);
+    toast.success('Página de Inicio actualizada ✓');
+  };
+
+  // Promos helpers
+  const setPromoItem = (idx: number, field: 'icon' | 'text', val: string) =>
+    setForm(prev => { const p = [...prev.promos]; p[idx] = { ...p[idx], [field]: val }; return { ...prev, promos: p }; });
+  const addPromoItem = () => setForm(prev => ({ ...prev, promos: [...prev.promos, { icon: '✨', text: '' }] }));
+  const removePromoItem = (idx: number) => setForm(prev => ({ ...prev, promos: prev.promos.filter((_, i) => i !== idx) }));
+
+  const Sec = ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <div className="bg-white rounded-xl border border-border p-6 mb-6">
+      <h3 className="font-display text-lg font-semibold mb-4 pb-3 border-b border-border">{title}</h3>
+      {children}
+    </div>
+  );
+
+  const F = ({ label, value, onChange, multi = false, ph = '', help }: { label: string; value: string; onChange: (v: string) => void; multi?: boolean; ph?: string; help?: string }) => (
+    <div className="mb-4">
+      <Label className="text-xs text-muted-foreground mb-1 block">{label}</Label>
+      {multi
+        ? <Textarea value={value} onChange={e => onChange(e.target.value)} rows={3} className="resize-none" placeholder={ph} />
+        : <Input value={value} onChange={e => onChange(e.target.value)} placeholder={ph} />}
+      {help && <p className="text-[10px] text-muted-foreground mt-1">{help}</p>}
+    </div>
+  );
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 pb-16">
+      <div className="flex justify-end sticky top-0 z-10 bg-muted/80 backdrop-blur-sm py-3 px-1">
+        <Button onClick={handleSave} className="bg-primary text-primary-foreground gap-2 shadow-md">
+          <Save className="h-4 w-4" /> Guardar Cambios del Inicio
+        </Button>
+      </div>
+
+      <Sec title="🖼️ Portada Gigante (Hero)">
+        <F label="Distintivo superior (Badge)" value={form.heroBadgeText} onChange={v => setField('heroBadgeText', v)} ph="✨ Nuevos diseños 2025" />
+        <F label="Título principal gigante" value={form.heroTitle} onChange={v => setField('heroTitle', v)} multi />
+        <F label="Subtítulo" value={form.heroSubtitle} onChange={v => setField('heroSubtitle', v)} multi />
+        <div className="grid md:grid-cols-2 gap-4">
+          <F label="Botón Primario" value={form.heroButton1Text} onChange={v => setField('heroButton1Text', v)} />
+          <F label="Botón Secundario" value={form.heroButton2Text} onChange={v => setField('heroButton2Text', v)} />
+        </div>
+        <F label="URL imagen de fondo" value={form.heroImage} onChange={v => setField('heroImage', v)} ph="https://..." />
+        {form.heroImage && <img src={form.heroImage} className="mt-1 h-32 w-full object-cover rounded-lg opacity-75" alt="preview" />}
+      </Sec>
+
+      {/* PROMOS Y NOTICIAS (TICKER SUPERIOR) */}
+      <Sec title="📢 Marquesina Animada (Anuncios Rápidos)">
+        <p className="text-sm text-muted-foreground mb-4">Aparecen en la banda que se mueve sola debajo de "Recién llegados". Usa emojis para que destaquen.</p>
+        <div className="space-y-4">
+          {form.promos.map((promo, idx) => (
+            <div key={idx} className="border border-border rounded-lg p-5 relative bg-white shadow-sm">
+              <button onClick={() => removePromoItem(idx)} className="absolute top-3 right-3 text-destructive hover:bg-destructive/10 p-1 rounded transition-colors"><Trash2 className="h-4 w-4" /></button>
+              <div className="flex gap-4">
+                <div className="w-20"><Label className="text-xs text-muted-foreground">Emoji</Label><Input value={promo.icon} onChange={e => setPromoItem(idx, 'icon', e.target.value)} className="mt-1 text-center font-emoji" /></div>
+                <div className="flex-1"><Label className="text-xs text-muted-foreground">Mensaje / Promoción</Label><Input value={promo.text} onChange={e => setPromoItem(idx, 'text', e.target.value)} className="mt-1" /></div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <Button variant="outline" size="sm" onClick={addPromoItem} className="mt-4 gap-2 whitespace-nowrap"><Plus className="h-4 w-4" /> Nuevo Anuncio</Button>
+      </Sec>
+
+      <Sec title="🏷️ Títulos de las Secciones">
+        <div className="grid md:grid-cols-2 gap-4">
+          <F label="Rótulo Favoritos (Ej: Los Favoritos)" value={form.favoritesTitle} onChange={v => setField('favoritesTitle', v)} />
+          <F label="Título Más Vendidos" value={form.bestSellersTitle} onChange={v => setField('bestSellersTitle', v)} />
+          <F label="Rótulo Novedades" value={form.newArrivalsTitle} onChange={v => setField('newArrivalsTitle', v)} />
+          <F label="Título Sección Novedades" value={form.designsTitle} onChange={v => setField('designsTitle', v)} />
+        </div>
+        <p className="text-sm text-muted-foreground mt-2 border-t pt-2">Nota: Los productos "Más vendidos" y "Novedades" se eligen en la pestaña <strong>Productos</strong>, activando las opciones "Destacado" o "Más Vendido".</p>
+      </Sec>
+
+      <Sec title="📖 Sección Historia en Inicio (Fondo Oscuro Inferior)">
+        <F label="Título de la sección" value={form.aboutSectionTitle} onChange={v => setField('aboutSectionTitle', v)} />
+        <F label="Párrafo sobre la empresa" value={form.aboutSectionText} onChange={v => setField('aboutSectionText', v)} multi />
+        <F label="Texto del botón (Va a /nosotros)" value={form.aboutSectionButtonText} onChange={v => setField('aboutSectionButtonText', v)} />
+      </Sec>
+
     </motion.div>
   );
 }
@@ -1019,9 +1120,11 @@ function QuotesTab() {
   };
 
   const handleUpdateStatus = (id: string, status: string) => {
-    updateQuoteStatus(id, status);
+    updateQuoteStatus(id, status as Quote['status']);
     toast.success('Estado actualizado');
-    if (selectedQuote?.id === id) setSelectedQuote({ ...selectedQuote, status });
+    if (selectedQuote?.id === id) {
+      setSelectedQuote({ ...selectedQuote, status: status as Quote['status'] });
+    }
   };
 
   const handleDelete = () => {
@@ -1453,6 +1556,173 @@ function ContactTab() {
           </Button>
         </div>
       </div>
+    </motion.div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────
+// Nosotros Tab — Editor de la página "Nosotros"
+// ─────────────────────────────────────────────────────────
+
+const Sec = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  <div className="bg-card rounded-xl border border-border p-6 mb-6 shadow-sm">
+    <h3 className="font-display text-lg font-semibold mb-4 pb-3 border-b border-border">{title}</h3>
+    {children}
+  </div>
+);
+
+const F = ({ label, value, onChange, multi = false, ph = '' }: { label: string; value: string; onChange: (v: string) => void; multi?: boolean; ph?: string }) => (
+  <div className="mb-4">
+    <Label className="text-xs text-muted-foreground mb-1 block">{label}</Label>
+    {multi
+      ? <Textarea value={value} onChange={e => onChange(e.target.value)} rows={3} className="resize-none bg-background" placeholder={ph} />
+      : <Input value={value} onChange={e => onChange(e.target.value)} placeholder={ph} className="bg-background" />}
+  </div>
+);
+function NosotrosTab() {
+  const { aboutPageContent: a, updateAboutPageContent } = useAdminStore();
+  const [form, setForm] = useState<AboutPageContent>({ ...a });
+
+  const setField = <K extends keyof AboutPageContent>(key: K, value: AboutPageContent[K]) =>
+    setForm(prev => ({ ...prev, [key]: value }));
+
+  const handleSave = () => {
+    updateAboutPageContent(form);
+    toast.success('Página Nosotros actualizada ✓');
+  };
+
+  // Timeline
+  const setTimelineItem = (idx: number, field: keyof TimelineItem, val: string) =>
+    setForm(prev => { const t = [...prev.timeline]; t[idx] = { ...t[idx], [field]: val }; return { ...prev, timeline: t }; });
+  const addTimelineItem = () => setForm(prev => ({ ...prev, timeline: [...prev.timeline, { year: '', title: '', description: '' }] }));
+  const removeTimelineItem = (idx: number) => setForm(prev => ({ ...prev, timeline: prev.timeline.filter((_, i) => i !== idx) }));
+
+  // Values
+  const setValueItem = (idx: number, field: keyof ValueItem, val: string) =>
+    setForm(prev => { const v = [...prev.values]; v[idx] = { ...v[idx], [field]: val }; return { ...prev, values: v }; });
+  const addValueItem = () => setForm(prev => ({ ...prev, values: [...prev.values, { icon: 'Heart', title: '', description: '' }] }));
+  const removeValueItem = (idx: number) => setForm(prev => ({ ...prev, values: prev.values.filter((_, i) => i !== idx) }));
+
+  // Team
+  const setTeamMember = (idx: number, field: keyof TeamMember, val: string) =>
+    setForm(prev => { const t = [...prev.team]; t[idx] = { ...t[idx], [field]: val }; return { ...prev, team: t }; });
+  const addTeamMember = () => setForm(prev => ({
+    ...prev,
+    team: [...prev.team, { id: crypto.randomUUID(), name: '', role: '', image: '', bio: '' }],
+  }));
+  const removeTeamMember = (idx: number) => setForm(prev => ({ ...prev, team: prev.team.filter((_, i) => i !== idx) }));
+
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 pb-16">
+      <div className="flex justify-end sticky top-0 z-10 bg-muted/80 backdrop-blur-sm py-3 px-1">
+        <Button onClick={handleSave} className="bg-primary text-primary-foreground gap-2 shadow-md">
+          <Save className="h-4 w-4" /> Guardar Todos los Cambios
+        </Button>
+      </div>
+
+      {/* HERO */}
+      <Sec title="🖼️ Hero — Portada">
+        <F label="Título principal" value={form.heroTitle} onChange={v => setField('heroTitle', v)} />
+        <F label="Subtítulo" value={form.heroSubtitle} onChange={v => setField('heroSubtitle', v)} multi />
+        <F label="URL imagen de fondo" value={form.heroImage} onChange={v => setField('heroImage', v)} ph="https://..." />
+        {form.heroImage && <img src={form.heroImage} className="mt-1 h-24 w-full object-cover rounded-lg opacity-75" alt="preview" />}
+      </Sec>
+
+      {/* HISTORIA */}
+      <Sec title="📖 Historia — Sección Quiénes Somos">
+        <div className="grid md:grid-cols-2 gap-4">
+          <F label="Etiqueta" value={form.storyTag} onChange={v => setField('storyTag', v)} />
+          <F label="Título" value={form.storyTitle} onChange={v => setField('storyTitle', v)} />
+        </div>
+        <F label="Párrafo 1" value={form.storyP1} onChange={v => setField('storyP1', v)} multi />
+        <F label="Párrafo 2" value={form.storyP2} onChange={v => setField('storyP2', v)} multi />
+        <F label="Párrafo 3" value={form.storyP3} onChange={v => setField('storyP3', v)} multi />
+        <div className="grid md:grid-cols-3 gap-4">
+          <F label="URL imagen lateral" value={form.storyImage} onChange={v => setField('storyImage', v)} ph="https://..." />
+          <F label="Número badge (ej: 30+)" value={form.storyBadgeNumber} onChange={v => setField('storyBadgeNumber', v)} />
+          <F label="Texto badge (ej: Años de Exp.)" value={form.storyBadgeText} onChange={v => setField('storyBadgeText', v)} />
+        </div>
+        {form.storyImage && <img src={form.storyImage} className="h-24 rounded-lg object-cover" alt="preview" />}
+      </Sec>
+
+      {/* TIMELINE */}
+      <Sec title="⏱️ Línea de Tiempo">
+        <div className="grid md:grid-cols-2 gap-4 mb-4">
+          <F label="Etiqueta superior" value={form.timelineTag} onChange={v => setField('timelineTag', v)} />
+          <F label="Título de sección" value={form.timelineTitle} onChange={v => setField('timelineTitle', v)} />
+        </div>
+        <div className="space-y-4">
+          {form.timeline.map((item, idx) => (
+            <div key={idx} className="border border-border rounded-lg p-5 relative bg-white shadow-sm">
+              <button onClick={() => removeTimelineItem(idx)} className="absolute top-3 right-3 text-destructive hover:bg-destructive/10 p-1 rounded transition-colors"><Trash2 className="h-4 w-4" /></button>
+              <div className="grid grid-cols-2 gap-4 mb-3">
+                <div className="space-y-1"><Label className="text-xs text-muted-foreground">Año / Etiqueta</Label><Input value={item.year} onChange={e => setTimelineItem(idx, 'year', e.target.value)} /></div>
+                <div className="space-y-1"><Label className="text-xs text-muted-foreground">Título del Hito</Label><Input value={item.title} onChange={e => setTimelineItem(idx, 'title', e.target.value)} /></div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Descripción detallada</Label>
+                <Textarea value={item.description} onChange={e => setTimelineItem(idx, 'description', e.target.value)} rows={2} className="resize-none" />
+              </div>
+            </div>
+          ))}
+        </div>
+        <Button variant="outline" size="sm" onClick={addTimelineItem} className="mt-4 gap-2 whitespace-nowrap"><Plus className="h-4 w-4" /> Nuevo Hito</Button>
+      </Sec>
+
+      {/* VALUES */}
+      <Sec title="💎 Nuestros Valores">
+        <F label="Título de la sección de Valores" value={form.valuesTitle} onChange={v => setField('valuesTitle', v)} />
+        <div className="grid sm:grid-cols-2 gap-4 mt-4">
+          {form.values.map((val, idx) => (
+            <div key={idx} className="border border-border rounded-lg p-5 relative bg-white shadow-sm">
+              <button onClick={() => removeValueItem(idx)} className="absolute top-3 right-3 text-destructive hover:bg-destructive/10 p-1 rounded transition-colors"><Trash2 className="h-4 w-4" /></button>
+              <div className="space-y-3">
+                <div><Label className="text-xs text-muted-foreground">Ícono (Lucide) ej: Heart, Users, Award, Leaf</Label><Input value={val.icon} onChange={e => setValueItem(idx, 'icon', e.target.value)} className="mt-1" /></div>
+                <div><Label className="text-xs text-muted-foreground">Título del Valor</Label><Input value={val.title} onChange={e => setValueItem(idx, 'title', e.target.value)} className="mt-1" /></div>
+                <div><Label className="text-xs text-muted-foreground">Descripción</Label><Textarea value={val.description} onChange={e => setValueItem(idx, 'description', e.target.value)} rows={2} className="mt-1 resize-none" /></div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <Button variant="outline" size="sm" onClick={addValueItem} className="mt-4 gap-2"><Plus className="h-4 w-4" /> Nuevo Valor</Button>
+      </Sec>
+
+      {/* TEAM */}
+      <Sec title="👥 Nuestro Equipo">
+        <div className="grid md:grid-cols-3 gap-4 mb-5">
+          <F label="Etiqueta" value={form.teamTag} onChange={v => setField('teamTag', v)} />
+          <F label="Título" value={form.teamTitle} onChange={v => setField('teamTitle', v)} />
+          <F label="Subtítulo descriptivo" value={form.teamSubtitle} onChange={v => setField('teamSubtitle', v)} />
+        </div>
+        <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+          {form.team.map((member, idx) => (
+            <div key={member.id} className="border border-border rounded-lg p-5 relative bg-white shadow-sm flex flex-col">
+              <button onClick={() => removeTeamMember(idx)} className="absolute top-3 right-3 text-destructive hover:bg-destructive/10 p-1 rounded transition-colors z-10"><Trash2 className="h-4 w-4" /></button>
+
+              <div className="flex items-center gap-3 mb-4">
+                {member.image ? (
+                  <img src={member.image} alt="" className="w-12 h-12 rounded-full object-cover shadow-sm border border-border" />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center border border-border">👤</div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm truncate">{member.name || 'Sin nombre'}</p>
+                  <p className="text-xs text-muted-foreground truncate">{member.role || 'Sin cargo'}</p>
+                </div>
+              </div>
+
+              <div className="space-y-3 flex-1 flex flex-col">
+                <div><Label className="text-xs text-muted-foreground">Nombre completo</Label><Input value={member.name} onChange={e => setTeamMember(idx, 'name', e.target.value)} className="mt-1 h-8 text-sm" /></div>
+                <div><Label className="text-xs text-muted-foreground">Cargo / Rol</Label><Input value={member.role} onChange={e => setTeamMember(idx, 'role', e.target.value)} className="mt-1 h-8 text-sm" /></div>
+                <div><Label className="text-xs text-muted-foreground">URL de la Foto</Label><Input value={member.image} onChange={e => setTeamMember(idx, 'image', e.target.value)} className="mt-1 h-8 text-sm" placeholder="https://..." /></div>
+                <div className="flex-1 flex flex-col"><Label className="text-xs text-muted-foreground">Biografía (Se ve al girar la tarjeta)</Label><Textarea value={member.bio} onChange={e => setTeamMember(idx, 'bio', e.target.value)} className="mt-1 resize-none flex-1 min-h-[80px] text-sm" /></div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <Button variant="outline" size="sm" onClick={addTeamMember} className="mt-4 gap-2"><Plus className="h-4 w-4" /> Añadir Miembro al Equipo</Button>
+      </Sec>
     </motion.div>
   );
 }

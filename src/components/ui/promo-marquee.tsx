@@ -1,14 +1,12 @@
 import { motion } from 'framer-motion';
-
-const promoMessages = [
-  { icon: '🛡️', text: 'Garantía Extendida: Todos nuestros diseños incluyen una Garantía de 5 años contra defectos de fabricación. ¡Inversión a largo plazo asegurada!' },
-  { icon: '💳', text: 'Paga a tu Ritmo: Financia tu compra hasta en 12 cuotas sin intereses con Bancolombia. ¡Renueva tu hogar hoy!' },
-  { icon: '📐', text: 'Diseño a Medida: ¿No encuentras la medida perfecta? Pregunta por nuestro servicio de personalización de muebles. ¡Creamos tu visión!' },
-  { icon: '⏳', text: 'Colección Limitada: ¡Solo quedan 48 horas para conseguir la Silla de Diseño Exclusivo Copenhagen! Edición de temporada.' },
-  { icon: '🥇', text: 'Más de 2,500 Clientes Felices: Hemos amueblado más de 2,500 hogares con muebles de calidad superior. ¡Únete a la comunidad!' },
-];
+import { useAdminStore } from '@/store/adminStore';
 
 export function PromoMarquee() {
+  const { homePageContent } = useAdminStore();
+  const promos = homePageContent.promos || [];
+
+  if (promos.length === 0) return null;
+
   return (
     <div className="bg-primary text-primary-foreground py-2.5 overflow-hidden">
       <div className="relative flex">
@@ -26,7 +24,7 @@ export function PromoMarquee() {
           }}
         >
           {/* First set */}
-          {promoMessages.map((promo, index) => (
+          {promos.map((promo, index) => (
             <span key={index} className="flex items-center gap-2 text-sm font-medium">
               <span className="text-lg">{promo.icon}</span>
               <span>{promo.text}</span>
@@ -34,7 +32,7 @@ export function PromoMarquee() {
             </span>
           ))}
           {/* Duplicate for seamless loop */}
-          {promoMessages.map((promo, index) => (
+          {promos.map((promo, index) => (
             <span key={`dup-${index}`} className="flex items-center gap-2 text-sm font-medium">
               <span className="text-lg">{promo.icon}</span>
               <span>{promo.text}</span>

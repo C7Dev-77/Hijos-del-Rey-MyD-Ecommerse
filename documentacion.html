@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentación del Proyecto</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f1f5f9;
+        }
+
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 15mm;
+            margin: 5mm auto;
+            background: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media print {
+            body {
+                background: none;
+                margin: 0;
+                padding: 0;
+            }
+
+            .page {
+                margin: 0;
+                box-shadow: none;
+                page-break-after: always;
+            }
+        }
+
+        .header {
+            background-color: #1c1e2e;
+            color: white;
+            text-align: center;
+            padding: 30px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .destacado {
+            color: #ff4757;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .title {
+            font-size: 28px;
+            font-weight: 800;
+            margin: 0 0 10px 0;
+        }
+
+        .subtitle {
+            font-size: 15px;
+            color: #cbd5e1;
+            font-weight: 400;
+            margin: 0;
+        }
+
+        .stats {
+            display: flex;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            flex: 1;
+            text-align: center;
+            border-right: 1px solid #e2e8f0;
+        }
+
+        .stat-item:last-child {
+            border-right: none;
+        }
+
+        .stat-value {
+            font-size: 14px;
+            font-weight: 700;
+            padding: 12px 5px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #64748b;
+            padding: 8px 5px;
+            background-color: #f8fafc;
+        }
+
+        .section {
+            margin-bottom: 15px;
+            flex-grow: 1;
+        }
+
+        h2 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-top: 0;
+            margin-bottom: 12px;
+            border-left: 4px solid #ed2d4d;
+            padding: 6px 12px;
+            background: #f8fafc;
+        }
+
+        .stack {
+            display: flex;
+            background-color: #ed2d4d;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .stack-item {
+            flex: 1;
+            text-align: center;
+            color: white;
+            font-weight: 600;
+            font-size: 11px;
+            padding: 8px 5px;
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .stack-item:last-child {
+            border-right: none;
+        }
+
+        ul {
+            padding-left: 18px;
+            margin: 0;
+        }
+
+        li {
+            margin-bottom: 6px;
+            font-size: 13px;
+            line-height: 1.4;
+            color: #334155;
+            position: relative;
+            list-style-type: none;
+        }
+
+        li::before {
+            content: "•";
+            color: #ed2d4d;
+            font-weight: bold;
+            display: inline-block;
+            width: 1em;
+            margin-left: -1em;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .info-box {
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .page-footer {
+            margin-top: auto;
+            padding-top: 10px;
+            border-top: 1px solid #f1f5f9;
+            font-size: 10px;
+            color: #94a3b8;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- PÁGINA 1 -->
+    <div class="page">
+        <div class="header">
+            <div class="destacado">★ PROYECTO DESTACADO ★</div>
+            <h1 class="title">MYB Hijos del Rey V2.0</h1>
+            <p class="subtitle">Ecosistema E-commerce con IA y Gestión Avanzada</p>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value">E-commerce</div>
+                <div class="stat-label">Sector</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">IA Reactiva</div>
+                <div class="stat-label">Tecnología</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">Multi-pago</div>
+                <div class="stat-label">Fintech</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">Cloud-Native</div>
+                <div class="stat-label">Arquitectura</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Visión Técnica y Arquitectura</h2>
+            <div class="stack">
+                <div class="stack-item">React 18</div>
+                <div class="stack-item">TypeScript</div>
+                <div class="stack-item">Tailwind CSS</div>
+                <div class="stack-item">Supabase DB</div>
+                <div class="stack-item">Groq LLM</div>
+                <div class="stack-item">Edge Functions</div>
+            </div>
+            <p style="font-size: 12.5px; color: #475569; margin-bottom: 15px;">Plataforma diseñada bajo el paradigma de
+                <strong>Serverless Architecture</strong>, utilizando Supabase para persistencia en tiempo real y Groq
+                para procesamiento cognitivo. El sistema garantiza una experiencia fluida al eliminar la carga de
+                procesamiento en el cliente mediante funciones distribuidas en la periferia.</p>
+        </div>
+
+        <div class="grid-2">
+            <div class="section">
+                <h2>Experiencia de Usuario (UX)</h2>
+                <div class="info-box">
+                    <ul>
+                        <li><strong>Catálogo AI-Driven:</strong> Motor de búsqueda semántica y filtros dinámicos.</li>
+                        <li><strong>Interfaz Adaptativa:</strong> Layout 100% responsivo con componentes optimizados.
+                        </li>
+                        <li><strong>Frictionless Checkout:</strong> Proceso de pago simplificado en 3 pasos.</li>
+                        <li><strong>Persistence Engine:</strong> Carritos que se sincronizan entre dispositivos.</li>
+                        <li><strong>Micro-interacciones:</strong> Animaciones que guían al usuario durante la compra.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="section">
+                <h2>Inteligencia Artificial</h2>
+                <div class="info-box">
+                    <ul>
+                        <li><strong>Deep Integration:</strong> IA entrenada con el catálogo para asesoría real.</li>
+                        <li><strong>Acción Directa:</strong> Generación de botones de compra dentro del chat.</li>
+                        <li><strong>Zero-Latency:</strong> Procesamiento optimizado vía Groq Cloud.</li>
+                        <li><strong>Personificación:</strong> Tono de voz alineado con MYB Hijos del Rey.</li>
+                        <li><strong>Smart Prompts:</strong> Entendimiento de lenguaje natural y errores ortográficos.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Seguridad y Pasarelas de Pago</h2>
+            <ul>
+                <li><strong>Tokenización Wompi:</strong> Procesamiento de datos bancarios cumpliendo con certificado
+                    PCI-DSS.</li>
+                <li><strong>Multi-Canal:</strong> Soporte para tarjetas de crédito, PSE, Nequi y transferencias manuales
+                    vía WhatsApp.</li>
+                <li><strong>Auth de Grado Bancario:</strong> Gestión de identidades mediante Supabase Auth con soporte
+                    para MFA.</li>
+                <li><strong>RLS (Row Level Security):</strong> Protección de datos directo en la base de datos por cada
+                    usuario.</li>
+            </ul>
+        </div>
+        <div class="page-footer">Página 1 | Ingeniería y Diseño de Producto</div>
+    </div>
+
+    <!-- PÁGINA 2 -->
+    <div class="page">
+        <div class="section">
+            <h2>Ecosistema de Administración (Back-Office)</h2>
+            <p style="font-size: 12.5px; color: #475569; margin-bottom: 10px;">Panel centralizado para el control
+                operativo total del negocio:</p>
+            <div class="grid-2">
+                <div class="info-box">
+                    <h3 style="font-size:14px; margin:0 0 10px 0; color:#1e293b;">Gestión Operativa</h3>
+                    <ul>
+                        <li><strong>Inventario Inteligente:</strong> Control de stock con alertas de agotado.</li>
+                        <li><strong>Catálogo CRUD:</strong> Editor visual de productos con galería de imágenes.</li>
+                        <li><strong>Order Management:</strong> Cambio de estados (Pagado, Enviado) en tiempo real.</li>
+                    </ul>
+                </div>
+                <div class="info-box">
+                    <h3 style="font-size:14px; margin:0 0 10px 0; color:#1e293b;">Inteligencia de Negocio</h3>
+                    <ul>
+                        <li><strong>Ventas Diarias:</strong> Gráficos de ingresos y pedidos completados.</li>
+                        <li><strong>Top Productos:</strong> Análisis de los artículos más deseados.</li>
+                        <li><strong>Data Export:</strong> Reportes detallados para contabilidad.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Infraestructura Escalable</h2>
+            <div class="info-box" style="background:#fff; border-left:4px solid #1c1e2e;">
+                <ul>
+                    <li><strong>PostgreSQL:</strong> Base de datos relacional sólida para integridad de datos
+                        financieros.</li>
+                    <li><strong>Global Edge Network:</strong> Despliegue en red de distribución para carga ultra rápida.
+                    </li>
+                    <li><strong>Asset Optimization:</strong> Compresión automática de imágenes subidas por el admin.
+                    </li>
+                    <li><strong>Vite Runtime:</strong> Proceso de construcción (build) optimizado para minimizar el peso
+                        del bundle.</li>
+                    <li><strong>SEO & Indexing:</strong> Arquitectura optimizada para motores de búsqueda y SSR
+                        dinámico.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Metodología y Desarrollo</h2>
+            <ul>
+                <li><strong>Clean Code:</strong> Implementación de patrones de diseño React para facilitar la
+                    escalabilidad.</li>
+                <li><strong>Scalability-First:</strong> Backend diseñado para soportar picos de tráfico durante
+                    temporadas altas.</li>
+                <li><strong>Mantenimiento:</strong> Código autodocumentado con tipado estricto en el 100% del proyecto.
+                </li>
+                <li><strong>Unit Verification:</strong> Pruebas de flujo de integración para las pasarelas críticas.
+                </li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Hoja de Ruta y Madurez</h2>
+            <p
+                style="font-size: 13px; color: #334155; line-height: 1.5; background:#f8fafc; padding:15px; border-radius:8px;">
+                El proyecto ha alcanzado una fase de madurez <strong>Production-Ready</strong>. La arquitectura
+                desacoplada permite integrar nuevas IAs, métodos de envío o mercados en cuestión de horas. Con una
+                interfaz que prioriza la conversión y un backend robusto, MYB Hijos del Rey V2.0 es la herramienta
+                definitiva para dominar el comercio digital moderno.
+            </p>
+        </div>
+
+        <div class="page-footer">Página 2 | Final de Documentación Técnica | Versión 2.0</div>
+    </div>
+</body>
+
+</html>

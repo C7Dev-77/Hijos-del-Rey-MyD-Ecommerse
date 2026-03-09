@@ -186,75 +186,107 @@ export function AIChatBot() {
         return base.slice(0, 3);
     })();
 
-    // Renderizar markdown básico (bold, newlines, links)
+    // Renderizar markdown del chatbot: listas, bold, links, emojis de sección
     const renderContent = (content: string) => {
-        return content.split('\n').map((line, i) => {
-            // First handle Markdown links [text](/url)
-            const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
-            const linkParts: (string | JSX.Element)[] = [];
-            let lastIndex = 0;
-            let match;
+        const lines = content.split('\n');
+        const elements: JSX.Element[] = [];
+        let bulletBuffer: string[] = [];
+        let keyCounter = 0;
 
-            while ((match = linkRegex.exec(line)) !== null) {
-                if (match.index > lastIndex) {
-                    linkParts.push(line.slice(lastIndex, match.index));
-                }
-                const text = match[1];
-                const url = match[2];
-                linkParts.push(
-                    <Link
-                        key={match.index}
-                        to={url}
-                        target={url.startsWith('http') ? '_blank' : undefined}
-                        rel={url.startsWith('http') ? 'noopener noreferrer' : undefined}
-                        className="font-semibold underline decoration-2 decoration-primary/50 underline-offset-2 hover:decoration-primary transition-colors text-primary"
-                        onClick={() => {
-                            // Si el link es interno, cerrar el chat
-                            if (!url.startsWith('http')) {
-                                setIsOpen(false);
-                            }
-                        }}
-                    >
-                        {text}
-                    </Link>
+        const flushBullets = () => {
+            if (bulletBuffer.length > 0) {
+                elements.push(
+                    <ul key={`ul-${keyCounter++}`} className="my-1.5 space-y-0.5 pl-1">
+                        {bulletBuffer.map((item, idx) => (
+                            <li key={idx} className="flex items-start gap-1.5 text-sm leading-snug">
+                                <span className="mt-1 w-1.5 h-1.5 rounded-full bg-primary/60 shrink-0" />
+                                <span>{renderInline(item)}</span>
+                            </li>
+                        ))}
+                    </ul>
                 );
-                lastIndex = match.index + match[0].length;
+                bulletBuffer = [];
+            }
+        };
+
+        for (const line of lines) {
+            const trimmed = line.trim();
+
+            // Línea de lista: empieza con • o -
+            if (/^[•\-]\s+/.test(trimmed)) {
+                bulletBuffer.push(trimmed.replace(/^[•\-]\s+/, ''));
+                continue;
             }
 
-            if (lastIndex < line.length) {
-                linkParts.push(line.slice(lastIndex));
+            // Línea vacía — separa párrafos
+            if (trimmed === '') {
+                flushBullets();
+                elements.push(<div key={`br-${keyCounter++}`} className="h-2" />);
+                continue;
             }
 
-            if (linkParts.length === 0) {
-                linkParts.push(line);
+            // Encabezado en negrita completa: **Título:**
+            if (/^\*\*[^*]+\*\*[:\s]*$/.test(trimmed)) {
+                flushBullets();
+                const headerText = trimmed.replace(/\*\*/g, '').replace(/:$/, '');
+                elements.push(
+                    <p key={`h-${keyCounter++}`} className="font-semibold text-sm mt-1 mb-0.5 text-foreground">
+                        {headerText}
+                    </p>
+                );
+                continue;
             }
 
-            // Then handle bold (**text**) inside the text parts
-            const finalParts = linkParts.map((part, kp) => {
-                if (typeof part === 'string') {
-                    const boldParts = part.split(/(\*\*[^*]+\*\*)/g);
-                    return (
-                        <span key={kp}>
-                            {boldParts.map((bPart, kb) => {
-                                if (bPart.startsWith('**') && bPart.endsWith('**')) {
-                                    return <strong key={kb} className="font-semibold">{bPart.slice(2, -2)}</strong>;
-                                }
-                                return <span key={kb}>{bPart}</span>;
-                            })}
-                        </span>
+            // Párrafo normal
+            flushBullets();
+            elements.push(
+                <p key={`p-${keyCounter++}`} className="text-sm leading-relaxed">
+                    {renderInline(trimmed)}
+                </p>
+            );
+        }
+
+        flushBullets();
+        return elements;
+    };
+
+    // Renderiza inline: bold (**texto**) y links [texto](/url)
+    const renderInline = (text: string): (string | JSX.Element)[] => {
+        const parts: (string | JSX.Element)[] = [];
+        const regex = /(\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\))/g;
+        let lastIdx = 0;
+        let m;
+        let ki = 0;
+
+        while ((m = regex.exec(text)) !== null) {
+            if (m.index > lastIdx) parts.push(text.slice(lastIdx, m.index));
+            const token = m[0];
+            if (token.startsWith('**')) {
+                parts.push(<strong key={ki++} className="font-semibold">{token.slice(2, -2)}</strong>);
+            } else {
+                const linkMatch = token.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+                if (linkMatch) {
+                    const [, label, url] = linkMatch;
+                    parts.push(
+                        <Link
+                            key={ki++}
+                            to={url}
+                            target={url.startsWith('http') ? '_blank' : undefined}
+                            rel={url.startsWith('http') ? 'noopener noreferrer' : undefined}
+                            className="font-semibold underline decoration-2 decoration-primary/50 underline-offset-2 hover:decoration-primary transition-colors text-primary"
+                            onClick={() => { if (!url.startsWith('http')) setIsOpen(false); }}
+                        >
+                            {label}
+                        </Link>
                     );
                 }
-                return part;
-            });
-
-            return (
-                <span key={i}>
-                    {finalParts}
-                    {i < content.split('\n').length - 1 && <br />}
-                </span>
-            );
-        });
+            }
+            lastIdx = m.index + token.length;
+        }
+        if (lastIdx < text.length) parts.push(text.slice(lastIdx));
+        return parts;
     };
+
 
     return (
         <>

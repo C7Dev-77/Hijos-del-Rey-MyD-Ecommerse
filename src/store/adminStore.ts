@@ -29,9 +29,55 @@ export interface StoreSettings {
   shippingPolicy: string;
   returnPolicy: string;
   privacyPolicy: string;
+  wompiPublicKey: string;
+  whatsappMessage: string;
+  checkoutMessage: string;
 }
 
-interface HomePageContent {
+export interface TimelineItem {
+  year: string;
+  title: string;
+  description: string;
+}
+
+export interface ValueItem {
+  icon: string; // lucide icon name as string
+  title: string;
+  description: string;
+}
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  image: string;
+  bio: string;
+}
+
+export interface AboutPageContent {
+  heroTitle: string;
+  heroSubtitle: string;
+  heroImage: string;
+  storyTag: string;
+  storyTitle: string;
+  storyP1: string;
+  storyP2: string;
+  storyP3: string;
+  storyImage: string;
+  storyBadgeNumber: string;
+  storyBadgeText: string;
+  timelineTag: string;
+  timelineTitle: string;
+  timeline: TimelineItem[];
+  valuesTitle: string;
+  values: ValueItem[];
+  teamTag: string;
+  teamTitle: string;
+  teamSubtitle: string;
+  team: TeamMember[];
+}
+
+export interface HomePageContent {
   heroTitle: string;
   heroSubtitle: string;
   heroImage: string;
@@ -45,6 +91,7 @@ interface HomePageContent {
   aboutSectionTitle: string;
   aboutSectionText: string;
   aboutSectionButtonText: string;
+  promos: { icon: string; text: string }[];
 }
 
 export interface Quote {
@@ -69,6 +116,7 @@ interface AdminState {
   blogPosts: BlogPost[];
   contactInfo: ContactInfo;
   homePageContent: HomePageContent;
+  aboutPageContent: AboutPageContent;
   storeSettings: StoreSettings;
   isLoadingProducts: boolean;
   isLoadingBlog: boolean;
@@ -91,13 +139,14 @@ interface AdminState {
   deleteBlogPost: (id: string) => Promise<void>;
 
   // Orders
-  orders: Order[]; // Usaremos Order de mock por ahora
+  orders: Order[];
   fetchOrders: () => Promise<void>;
   updateOrderStatus: (id: string, status: string) => Promise<void>;
 
   // Contact, Home, Store Settings (Ahora se guardan en Supabase)
   updateContactInfo: (info: Partial<ContactInfo>) => Promise<void>;
   updateHomePageContent: (content: Partial<HomePageContent>) => Promise<void>;
+  updateAboutPageContent: (content: Partial<AboutPageContent>) => void;
   updateStoreSettings: (settings: Partial<StoreSettings>) => Promise<void>;
 
   // Quotes (Cotizaciones)
@@ -134,6 +183,12 @@ const defaultHomePageContent: HomePageContent = {
   aboutSectionTitle: 'Artesanía de Excelencia',
   aboutSectionText: 'Nuestro compromiso es crear piezas únicas que transformen tus espacios. Cada mueble está fabricado con maderas de origen sostenible y mentes creativas.',
   aboutSectionButtonText: 'Conoce Nuestra Historia',
+  promos: [
+    { icon: '🛡️', text: 'Garantía Extendida: Todos nuestros diseños incluyen una Garantía de 5 años contra defectos de fabricación.' },
+    { icon: '💳', text: 'Paga a tu Ritmo: Financia tu compra hasta en 12 cuotas sin intereses con Bancolombia.' },
+    { icon: '📐', text: 'Diseño a Medida: Servicio de personalización de muebles. ¡Creamos tu visión!' },
+    { icon: '🥇', text: 'Más de 2,500 Clientes Felices en toda Colombia.' },
+  ],
 };
 
 const defaultStoreSettings: StoreSettings = {
@@ -148,6 +203,48 @@ const defaultStoreSettings: StoreSettings = {
   shippingPolicy: 'Envíos a nivel nacional en Colombia con tiempos de entrega de 5 a 10 días hábiles.',
   returnPolicy: 'Se aceptan devoluciones dentro de los 15 días posteriores a la entrega.',
   privacyPolicy: 'Tus datos están seguros con nosotros.',
+  wompiPublicKey: 'pub_test_X0z...',
+  whatsappMessage: 'Hola, tengo una consulta desde la tienda virtual.',
+  checkoutMessage: 'Procesaremos tu pedido vía WhatsApp para confirmar disponibilidad y envío.',
+};
+
+const defaultAboutPageContent: AboutPageContent = {
+  heroTitle: 'Nuestra Historia',
+  heroSubtitle: 'Más de tres décadas dedicados a crear muebles artesanales que transforman casas en hogares.',
+  heroImage: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1920',
+  storyTag: 'Quiénes Somos',
+  storyTitle: 'Artesanos de Tradición, Creadores del Futuro',
+  storyP1: 'En 1990, Manuel y Daniela comenzaron con un sueño: crear muebles que no solo fueran funcionales, sino verdaderas obras de arte que contaran historias y crearan memorias.',
+  storyP2: 'Hoy, M&D Hijos del Rey es sinónimo de calidad artesanal en Colombia. Cada pieza que sale de nuestro taller lleva consigo el legado de técnicas tradicionales perfeccionadas durante generaciones.',
+  storyP3: 'Nuestro compromiso va más allá de la madera: trabajamos con proveedores certificados, utilizamos materiales sostenibles y garantizamos condiciones justas para todos nuestros artesanos.',
+  storyImage: 'https://images.unsplash.com/photo-1452457750107-cd084dce177d?w=800',
+  storyBadgeNumber: '30+',
+  storyBadgeText: 'Años de Experiencia',
+  timelineTag: 'Nuestra Trayectoria',
+  timelineTitle: 'Hitos que Nos Definen',
+  timeline: [
+    { year: '1990', title: 'El Comienzo', description: 'Manuel y Daniela fundaron un pequeño taller de carpintería con la visión de crear muebles que trascendieran generaciones.' },
+    { year: '2000', title: 'Expansión', description: 'Abrimos nuestra primera sala de exhibición y formamos un equipo de 15 artesanos especializados.' },
+    { year: '2010', title: 'Reconocimiento', description: 'Recibimos el Premio Nacional de Artesanía por nuestra contribución a preservar técnicas tradicionales.' },
+    { year: '2020', title: 'Transformación Digital', description: 'Lanzamos nuestra plataforma digital sin perder la esencia artesanal que nos caracteriza.' },
+    { year: 'Hoy', title: 'Líderes en Artesanía', description: 'Más de 30 años creando piezas únicas para miles de hogares colombianos.' },
+  ],
+  valuesTitle: 'Nuestros Valores',
+  values: [
+    { icon: 'Heart', title: 'Pasión por el Detalle', description: 'Cada pieza recibe la dedicación y el amor que merece.' },
+    { icon: 'Users', title: 'Herencia Familiar', description: 'Transmitimos conocimientos de generación en generación.' },
+    { icon: 'Award', title: 'Calidad Superior', description: 'Solo utilizamos los mejores materiales y técnicas.' },
+    { icon: 'Leaf', title: 'Sostenibilidad', description: 'Comprometidos con el medio ambiente y la comunidad.' },
+  ],
+  teamTag: 'Nuestro Equipo',
+  teamTitle: 'Los Artesanos Detrás de la Magia',
+  teamSubtitle: 'Toca cada tarjeta para conocer más sobre nuestros artesanos',
+  team: [
+    { id: '1', name: 'Manuel Rodríguez', role: 'Fundador & Maestro Ebanista', image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400', bio: 'Con más de 40 años de experiencia en ebanistería, Manuel es el alma de M&D. Su pasión por la madera comenzó a los 12 años en el taller de su abuelo.' },
+    { id: '2', name: 'Daniela Martínez', role: 'Co-Fundadora & Directora de Diseño', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400', bio: 'Arquitecta de formación, Daniela aporta la visión estética moderna a nuestros diseños tradicionales.' },
+    { id: '3', name: 'Carlos Herrera', role: 'Maestro Carpintero Senior', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400', bio: 'Carlos lleva 25 años perfeccionando el arte de la carpintería fina. Especialista en técnicas de ensamblaje tradicional.' },
+    { id: '4', name: 'Ana Lucía Gómez', role: 'Especialista en Tapicería', image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400', bio: 'Ana Lucía transformó su pasión por los textiles en una maestría en tapicería de alta gama.' },
+  ],
 };
 
 // Helper: convierte snake_case de Supabase a camelCase del frontend
@@ -257,6 +354,9 @@ function mapSettingsFromDB(row: Record<string, unknown>) {
       shippingPolicy: row.shipping_policy as string,
       returnPolicy: row.return_policy as string,
       privacyPolicy: row.privacy_policy as string,
+      wompiPublicKey: (row.wompi_public_key as string) || defaultStoreSettings.wompiPublicKey,
+      whatsappMessage: (row.whatsapp_message as string) || defaultStoreSettings.whatsappMessage,
+      checkoutMessage: (row.checkout_message as string) || defaultStoreSettings.checkoutMessage,
     },
     homePageContent: {
       heroTitle: row.hero_title as string,
@@ -272,6 +372,7 @@ function mapSettingsFromDB(row: Record<string, unknown>) {
       aboutSectionTitle: (row.about_section_title as string) || defaultHomePageContent.aboutSectionTitle,
       aboutSectionText: (row.about_section_text as string) || defaultHomePageContent.aboutSectionText,
       aboutSectionButtonText: (row.about_section_button_text as string) || defaultHomePageContent.aboutSectionButtonText,
+      promos: (row.promos as { icon: string; text: string }[]) || defaultHomePageContent.promos,
     },
     contactInfo: {
       phone: row.contact_phone as string,
@@ -291,11 +392,12 @@ function mapSettingsFromDB(row: Record<string, unknown>) {
 export const useAdminStore = create<AdminState>()(
   persist(
     (set, get) => ({
-      // Estado inicial vacío (sin datos falsos)
+      // Estado inicial
       products: [],
       blogPosts: [],
       contactInfo: defaultContactInfo,
       homePageContent: defaultHomePageContent,
+      aboutPageContent: defaultAboutPageContent,
       storeSettings: defaultStoreSettings,
       isLoadingProducts: false,
       isLoadingBlog: false,
@@ -552,6 +654,7 @@ export const useAdminStore = create<AdminState>()(
           about_section_title: updated.aboutSectionTitle,
           about_section_text: updated.aboutSectionText,
           about_section_button_text: updated.aboutSectionButtonText,
+          promos: updated.promos,
         }).eq('id', 1);
 
         if (error) {
@@ -563,7 +666,7 @@ export const useAdminStore = create<AdminState>()(
         set((state) => ({ storeSettings: { ...state.storeSettings, ...settings } }));
         const updated = get().storeSettings;
 
-        await supabase.from('app_settings').update({
+        const { error } = await supabase.from('app_settings').update({
           store_name: updated.storeName,
           store_description: updated.storeDescription,
           logo_url: updated.logoUrl,
@@ -575,8 +678,20 @@ export const useAdminStore = create<AdminState>()(
           shipping_policy: updated.shippingPolicy,
           return_policy: updated.returnPolicy,
           privacy_policy: updated.privacyPolicy,
+          wompi_public_key: updated.wompiPublicKey,
+          whatsapp_message: updated.whatsappMessage,
+          checkout_message: updated.checkoutMessage,
         }).eq('id', 1);
+
+        if (error) {
+          console.warn('Algunas columnas nuevas podrían no estar en Supabase, error ignorado localmente:', error.message);
+        }
       },
+
+
+      // ─── About Page (localStorage only) ─────────────────────────
+      updateAboutPageContent: (content) =>
+        set((state) => ({ aboutPageContent: { ...state.aboutPageContent, ...content } })),
 
       // ─── Quotes ────────────────────────────────────────────────
       addQuote: (quote) =>
@@ -596,10 +711,10 @@ export const useAdminStore = create<AdminState>()(
     }),
     {
       name: 'myd-admin-store',
-      // Todavía persistimos en local como fallback rápido visual (cargos optimistas)
       partialize: (state) => ({
         contactInfo: state.contactInfo,
         homePageContent: state.homePageContent,
+        aboutPageContent: state.aboutPageContent,
         storeSettings: state.storeSettings,
         quotes: state.quotes,
       }),

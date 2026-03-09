@@ -8,63 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-    Save, Store, Link as LinkIcon, Shield, Search, Users,
-    Globe, AlertTriangle, CheckCircle2, Eye, Pencil, Trash2, Plus, Image as ImageIcon
+    Save, Store, Shield, Search, Globe, AlertTriangle, CheckCircle2, Eye, Zap
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-// ── Tipos del Equipo ──────────────────────────────────────────────────────────
-interface TeamMember {
-    id: string;
-    name: string;
-    role: string;
-    image: string;
-    bio: string;
-}
 
-const defaultTeam: TeamMember[] = [
-    {
-        id: '1',
-        name: 'Manuel Rodríguez',
-        role: 'Fundador & Maestro Ebanista',
-        image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400',
-        bio: 'Con más de 40 años de experiencia en ebanistería, Manuel es el alma de M&D.',
-    },
-    {
-        id: '2',
-        name: 'Daniela Martínez',
-        role: 'Co-Fundadora & Directora de Diseño',
-        image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400',
-        bio: 'Arquitecta de formación, Daniela aporta la visión estética moderna a nuestros diseños.',
-    },
-    {
-        id: '3',
-        name: 'Carlos Herrera',
-        role: 'Maestro Carpintero Senior',
-        image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-        bio: 'Carlos lleva 25 años perfeccionando el arte de la carpintería fina. Especialista en técnicas de ensamblaje tradicional japonés.',
-    },
-    {
-        id: '4',
-        name: 'Ana Lucía Gómez',
-        role: 'Especialista en Tapicería',
-        image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400',
-        bio: 'Ana Lucía transformó su pasión por los textiles en una maestría en tapicería de alta gama.',
-    },
-];
-
-const TEAM_KEY = 'myb_team_members';
-
-function loadTeam(): TeamMember[] {
-    try {
-        const raw = localStorage.getItem(TEAM_KEY);
-        return raw ? JSON.parse(raw) : defaultTeam;
-    } catch { return defaultTeam; }
-}
-
-function saveTeam(team: TeamMember[]) {
-    localStorage.setItem(TEAM_KEY, JSON.stringify(team));
-}
 
 // ── Counter badge ─────────────────────────────────────────────────────────────
 function CharCounter({ value, max, recommended }: { value: string; max: number; recommended: number }) {
@@ -99,25 +47,14 @@ function SeoPreview({ title, description, url }: { title: string; description: s
 
 // ── Componente principal ──────────────────────────────────────────────────────
 export default function HomeContentTab() {
-    const { homePageContent, updateHomePageContent, storeSettings, updateStoreSettings, contactInfo, updateContactInfo } = useAdminStore();
-    const [homeData, setHomeData] = useState(homePageContent);
+    const { storeSettings, updateStoreSettings, contactInfo, updateContactInfo } = useAdminStore();
     const [storeData, setStoreData] = useState(storeSettings);
     const [contactData, setContactData] = useState(contactInfo);
-    const [team, setTeam] = useState<TeamMember[]>(loadTeam);
-    const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
     const [isSaving, setIsSaving] = useState(false);
 
     // Sincronizar si el store cambia (por fetchSettings)
     useEffect(() => { setStoreData(storeSettings); }, [storeSettings]);
-    useEffect(() => { setHomeData(homePageContent); }, [homePageContent]);
     useEffect(() => { setContactData(contactInfo); }, [contactInfo]);
-
-    const handleSaveHome = async () => {
-        setIsSaving(true);
-        await updateHomePageContent(homeData);
-        toast.success('Contenido de inicio actualizado ✓');
-        setIsSaving(false);
-    };
 
     const handleSaveStore = async () => {
         setIsSaving(true);
@@ -149,40 +86,17 @@ export default function HomeContentTab() {
         setIsSaving(false);
     };
 
-    // ── Equipo CRUD ───────────────────────────────────────────────────────────
-    const newMember = (): TeamMember => ({
-        id: Date.now().toString(),
-        name: '', role: '', image: '', bio: '',
-    });
 
-    const saveMember = () => {
-        if (!editingMember) return;
-        const updated = team.some(m => m.id === editingMember.id)
-            ? team.map(m => m.id === editingMember.id ? editingMember : m)
-            : [...team, editingMember];
-        setTeam(updated);
-        saveTeam(updated);
-        setEditingMember(null);
-        toast.success('Miembro del equipo guardado ✓');
-    };
-
-    const deleteMember = (id: string) => {
-        const updated = team.filter(m => m.id !== id);
-        setTeam(updated);
-        saveTeam(updated);
-        toast.success('Miembro eliminado');
-    };
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <div className="max-w-4xl mx-auto">
                 <Tabs defaultValue="general" className="w-full">
-                    <TabsList className="grid w-full grid-cols-5 mb-8">
+                    <TabsList className="grid w-full grid-cols-4 mb-8">
                         <TabsTrigger value="general" className="flex gap-1.5"><Store className="h-4 w-4" />General</TabsTrigger>
-                        <TabsTrigger value="home" className="flex gap-1.5"><LinkIcon className="h-4 w-4" />Inicio</TabsTrigger>
                         <TabsTrigger value="seo" className="flex gap-1.5"><Search className="h-4 w-4" />SEO</TabsTrigger>
-                        <TabsTrigger value="team" className="flex gap-1.5"><Users className="h-4 w-4" />Equipo</TabsTrigger>
                         <TabsTrigger value="policies" className="flex gap-1.5"><Shield className="h-4 w-4" />Políticas</TabsTrigger>
+                        <TabsTrigger value="integrations" className="flex gap-1.5"><Zap className="h-4 w-4" />Pagos e Integraciones</TabsTrigger>
                     </TabsList>
 
                     {/* ── GENERAL ─────────────────────────────────────────────────── */}
@@ -265,84 +179,6 @@ export default function HomeContentTab() {
                         </div>
                     </TabsContent>
 
-                    {/* ── INICIO ──────────────────────────────────────────────────── */}
-                    <TabsContent value="home">
-                        <div className="bg-card border border-border rounded-xl p-6 space-y-6">
-                            <h3 className="font-display font-semibold text-lg border-b pb-3">Contenido de Inicio</h3>
-
-                            <div className="space-y-4">
-                                <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Sección Hero</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label>Texto del distintivo (Badge)</Label>
-                                        <Input value={homeData.heroBadgeText} onChange={e => setHomeData({ ...homeData, heroBadgeText: e.target.value })} placeholder="✨ Nuevos diseños 2025" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>URL Imagen de Fondo</Label>
-                                        <Input value={homeData.heroImage} onChange={e => setHomeData({ ...homeData, heroImage: e.target.value })} />
-                                    </div>
-                                    <div className="space-y-2 md:col-span-2">
-                                        <Label>Título Principal</Label>
-                                        <Input value={homeData.heroTitle} onChange={e => setHomeData({ ...homeData, heroTitle: e.target.value })} />
-                                    </div>
-                                    <div className="space-y-2 md:col-span-2">
-                                        <Label>Subtítulo</Label>
-                                        <Textarea value={homeData.heroSubtitle} onChange={e => setHomeData({ ...homeData, heroSubtitle: e.target.value })} rows={2} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Botón Principal (Catálogo)</Label>
-                                        <Input value={homeData.heroButton1Text} onChange={e => setHomeData({ ...homeData, heroButton1Text: e.target.value })} placeholder="Explorar Catálogo" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Botón Secundario (Cotizar)</Label>
-                                        <Input value={homeData.heroButton2Text} onChange={e => setHomeData({ ...homeData, heroButton2Text: e.target.value })} placeholder="Cotizar Mueble" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-4 border-t pt-4">
-                                <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Títulos de Secciones</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {[
-                                        { label: 'Favoritos', key: 'favoritesTitle' },
-                                        { label: 'Más Vendidos', key: 'bestSellersTitle' },
-                                        { label: 'Recién Llegados', key: 'newArrivalsTitle' },
-                                        { label: 'Sección Diseños', key: 'designsTitle' },
-                                    ].map(({ label, key }) => (
-                                        <div key={key} className="space-y-2">
-                                            <Label>{label}</Label>
-                                            <Input
-                                                value={homeData[key as keyof typeof homeData] as string}
-                                                onChange={e => setHomeData({ ...homeData, [key]: e.target.value })}
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="space-y-4 border-t pt-4">
-                                <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Sección Nosotros (Inferior)</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label>Título de la Sección</Label>
-                                        <Input value={homeData.aboutSectionTitle} onChange={e => setHomeData({ ...homeData, aboutSectionTitle: e.target.value })} placeholder="Ej: Artesanía de Excelencia" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Texto del Botón</Label>
-                                        <Input value={homeData.aboutSectionButtonText} onChange={e => setHomeData({ ...homeData, aboutSectionButtonText: e.target.value })} placeholder="Conoce Nuestra Historia" />
-                                    </div>
-                                    <div className="space-y-2 md:col-span-2">
-                                        <Label>Descripción de la Sección</Label>
-                                        <Textarea value={homeData.aboutSectionText} onChange={e => setHomeData({ ...homeData, aboutSectionText: e.target.value })} rows={3} placeholder="Contenido que habla de la trayectoria de M&D..." />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <Button onClick={handleSaveHome} disabled={isSaving} className="w-full bg-primary text-primary-foreground">
-                                <Save className="h-4 w-4 mr-2" /> Guardar Inicio
-                            </Button>
-                        </div>
-                    </TabsContent>
 
                     {/* ── SEO ─────────────────────────────────────────────────────── */}
                     <TabsContent value="seo">
@@ -423,88 +259,49 @@ export default function HomeContentTab() {
                         </div>
                     </TabsContent>
 
-                    {/* ── EQUIPO ──────────────────────────────────────────────────── */}
-                    <TabsContent value="team">
-                        <div className="space-y-6">
-                            <div className="bg-card border border-border rounded-xl p-6">
-                                <div className="flex items-center justify-between border-b pb-3 mb-5">
-                                    <h3 className="font-display font-semibold text-lg flex items-center gap-2">
-                                        <Users className="h-5 w-5 text-primary" /> Nuestro Equipo
-                                    </h3>
-                                    <Button size="sm" onClick={() => setEditingMember(newMember())}>
-                                        <Plus className="h-4 w-4 mr-1" /> Agregar miembro
-                                    </Button>
+                    {/* ── INTEGRACIONES Y CHECKOUT ───────────────────────────────── */}
+                    <TabsContent value="integrations">
+                        <div className="bg-card border border-border rounded-xl p-6 space-y-6">
+                            <h3 className="font-display font-semibold text-lg border-b pb-3 flex items-center gap-2">
+                                <Zap className="h-5 w-5 text-primary" /> Configuraciones de Pagos e Integraciones
+                            </h3>
+                            <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 text-sm space-y-1">
+                                <p className="font-medium text-primary">Ajustes avanzados y Checkout</p>
+                                <p className="text-muted-foreground">Configura los mensajes para tus clientes y las llaves de pasarelas de pago. Protege siempre tu llave privada.</p>
+                            </div>
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label>Llave Pública de Wompi (Public Key)</Label>
+                                    <Input
+                                        value={storeData.wompiPublicKey || ''}
+                                        onChange={e => setStoreData({ ...storeData, wompiPublicKey: e.target.value })}
+                                        placeholder="pub_test_..."
+                                    />
+                                    <p className="text-xs text-muted-foreground">Tu llave pública para transacciones seguras. Empieza por pub_test_ o pub_prod_</p>
                                 </div>
-                                <p className="text-sm text-muted-foreground mb-4">
-                                    Los cambios aquí se reflejan en la página <strong>/nosotros</strong> al recargar.
-                                </p>
-
-                                {/* Lista de miembros */}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    {team.map(member => (
-                                        <div key={member.id} className="flex items-start gap-3 p-4 border border-border rounded-xl hover:border-primary/50 transition-colors">
-                                            <img
-                                                src={member.image || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80'}
-                                                alt={member.name}
-                                                className="w-14 h-14 rounded-full object-cover shrink-0"
-                                                onError={e => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80'; }}
-                                            />
-                                            <div className="flex-1 min-w-0">
-                                                <p className="font-semibold text-sm truncate">{member.name || 'Sin nombre'}</p>
-                                                <p className="text-xs text-muted-foreground truncate">{member.role}</p>
-                                                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{member.bio}</p>
-                                            </div>
-                                            <div className="flex flex-col gap-1 shrink-0">
-                                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditingMember({ ...member })}>
-                                                    <Pencil className="h-3.5 w-3.5" />
-                                                </Button>
-                                                <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => deleteMember(member.id)}>
-                                                    <Trash2 className="h-3.5 w-3.5" />
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    ))}
+                                <div className="space-y-2">
+                                    <Label>Plantilla de mensaje Botón Flotante WhatsApp</Label>
+                                    <Textarea
+                                        value={storeData.whatsappMessage || ''}
+                                        onChange={e => setStoreData({ ...storeData, whatsappMessage: e.target.value })}
+                                        rows={2}
+                                        placeholder="Hola, tengo una duda..."
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Instrucciones de Checkout Manual (WhatsApp)</Label>
+                                    <Textarea
+                                        value={storeData.checkoutMessage || ''}
+                                        onChange={e => setStoreData({ ...storeData, checkoutMessage: e.target.value })}
+                                        rows={3}
+                                        placeholder="Te redireccionaremos a WhatsApp para completar..."
+                                    />
+                                    <p className="text-xs text-muted-foreground">Este mensaje aparece como alternativa o junto al botón de pago con Wompi.</p>
                                 </div>
                             </div>
-
-                            {/* Panel de edición de miembro */}
-                            {editingMember && (
-                                <div className="bg-card border-2 border-primary/30 rounded-xl p-6 space-y-4">
-                                    <h4 className="font-semibold flex items-center gap-2">
-                                        <Pencil className="h-4 w-4 text-primary" />
-                                        {editingMember.name ? `Editando: ${editingMember.name}` : 'Nuevo miembro'}
-                                    </h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label>Nombre</Label>
-                                            <Input value={editingMember.name} onChange={e => setEditingMember({ ...editingMember, name: e.target.value })} placeholder="Nombre completo" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>Cargo / Rol</Label>
-                                            <Input value={editingMember.role} onChange={e => setEditingMember({ ...editingMember, role: e.target.value })} placeholder="Maestro Ebanista" />
-                                        </div>
-                                        <div className="space-y-2 md:col-span-2">
-                                            <Label className="flex items-center gap-2"><ImageIcon className="h-4 w-4" /> URL de la Foto</Label>
-                                            <Input value={editingMember.image} onChange={e => setEditingMember({ ...editingMember, image: e.target.value })} placeholder="https://..." />
-                                            {editingMember.image && (
-                                                <img src={editingMember.image} alt="preview" className="h-20 w-20 rounded-full object-cover mt-1" />
-                                            )}
-                                        </div>
-                                        <div className="space-y-2 md:col-span-2">
-                                            <Label>Biografía</Label>
-                                            <Textarea value={editingMember.bio} onChange={e => setEditingMember({ ...editingMember, bio: e.target.value })} rows={3} placeholder="Breve descripción del artesano..." />
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-3">
-                                        <Button onClick={saveMember} className="flex-1 bg-primary text-primary-foreground">
-                                            <Save className="h-4 w-4 mr-2" /> Guardar Miembro
-                                        </Button>
-                                        <Button variant="outline" onClick={() => setEditingMember(null)} className="flex-1">
-                                            Cancelar
-                                        </Button>
-                                    </div>
-                                </div>
-                            )}
+                            <Button onClick={handleSaveStore} disabled={isSaving} className="w-full bg-primary text-primary-foreground">
+                                <Save className="h-4 w-4 mr-2" /> Guardar Integraciones
+                            </Button>
                         </div>
                     </TabsContent>
 
