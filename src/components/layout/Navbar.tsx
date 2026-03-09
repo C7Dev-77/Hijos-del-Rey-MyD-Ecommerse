@@ -130,8 +130,8 @@ export function Navbar() {
             <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
 
             {/* Wishlist */}
-            <Link to="/favoritos">
-              <Button variant="ghost" size="icon" className={cn(textColor, 'hover:text-gold hover:bg-transparent hidden sm:flex relative')}>
+            <Link to="/favoritos" aria-label="Ir a favoritos">
+              <Button variant="ghost" size="icon" className={cn(textColor, 'hover:text-gold hover:bg-transparent hidden sm:flex relative')} aria-label="Ver favoritos">
                 <Heart className={cn("h-5 w-5", wishlistCount > 0 && "text-red-500 fill-red-500")} />
                 {wishlistCount > 0 && (
                   <motion.span
@@ -151,6 +151,7 @@ export function Navbar() {
               size="icon"
               className={cn(textColor, 'hover:text-gold hover:bg-transparent relative')}
               onClick={openCart}
+              aria-label="Abrir carrito de compras"
             >
               <ShoppingCart className="h-5 w-5" />
               {itemCount > 0 && (
@@ -168,7 +169,7 @@ export function Navbar() {
             {isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className={cn(textColor, 'hover:text-gold hover:bg-transparent')}>
+                  <Button variant="ghost" size="icon" className={cn(textColor, 'hover:text-gold hover:bg-transparent')} aria-label="Menú de usuario">
                     <User className="h-5 w-5" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -199,8 +200,8 @@ export function Navbar() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Link to="/login">
-                <Button variant="ghost" size="icon" className={cn(textColor, 'hover:text-gold hover:bg-transparent')}>
+              <Link to="/login" aria-label="Iniciar sesión">
+                <Button variant="ghost" size="icon" className={cn(textColor, 'hover:text-gold hover:bg-transparent')} aria-label="Iniciar sesión">
                   <User className="h-5 w-5" />
                 </Button>
               </Link>
@@ -212,6 +213,8 @@ export function Navbar() {
               size="icon"
               className={cn(textColor, 'hover:text-gold hover:bg-transparent lg:hidden')}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label={mobileMenuOpen ? "Cerrar menú" : "Abrir menú principal"}
+              aria-expanded={mobileMenuOpen}
             >
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </Button>

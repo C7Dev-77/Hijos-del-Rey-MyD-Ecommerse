@@ -42,6 +42,7 @@ export const ProductCard = forwardRef<HTMLDivElement, ProductCardProps>(({ produ
               src={product.images[0]}
               alt={product.name}
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              loading="lazy"
             />
 
             {/* Overlay */}
@@ -71,6 +72,7 @@ export const ProductCard = forwardRef<HTMLDivElement, ProductCardProps>(({ produ
               <Button
                 size="icon"
                 variant="secondary"
+                aria-label={isWishlisted ? "Quitar de favoritos" : "Añadir a favoritos"}
                 className={cn(
                   "h-9 w-9 rounded-full bg-background/90 backdrop-blur-sm hover:bg-background shadow-md transition-colors",
                   isWishlisted && "text-red-500 hover:text-red-600"
@@ -90,6 +92,7 @@ export const ProductCard = forwardRef<HTMLDivElement, ProductCardProps>(({ produ
               <Button
                 size="icon"
                 variant="secondary"
+                aria-label="Ver detalles"
                 className="h-9 w-9 rounded-full bg-background/90 backdrop-blur-sm hover:bg-background shadow-md"
               >
                 <Eye className="h-4 w-4" />

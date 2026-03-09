@@ -31,7 +31,7 @@ export function Footer() {
             <Link to="/" className="inline-flex items-center gap-3">
               <img src="/logo.png" alt="M&D Hijos del Rey" className="h-12 w-auto" />
             </Link>
-            <p className="text-cream/70 text-sm leading-relaxed">
+            <p className="text-cream/90 text-sm leading-relaxed">
               Muebles artesanales colombianos de alta calidad. Cada pieza cuenta
               una historia de tradición y calidad hecha en Sampués, Sucre.
             </p>
@@ -42,6 +42,7 @@ export function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-10 h-10 rounded-full bg-cream/10 flex items-center justify-center hover:bg-gold hover:text-charcoal transition-colors"
+                  aria-label="Perfil de Facebook"
                 >
                   <Facebook className="h-5 w-5" />
                 </a>
@@ -52,6 +53,7 @@ export function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-10 h-10 rounded-full bg-cream/10 flex items-center justify-center hover:bg-gold hover:text-charcoal transition-colors"
+                  aria-label="Perfil de Instagram"
                 >
                   <Instagram className="h-5 w-5" />
                 </a>
@@ -62,6 +64,7 @@ export function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-10 h-10 rounded-full bg-cream/10 flex items-center justify-center hover:bg-gold hover:text-charcoal transition-colors"
+                  aria-label="Perfil de Twitter o Pinterest"
                 >
                   <Twitter className="h-5 w-5" />
                 </a>
@@ -86,7 +89,7 @@ export function Footer() {
                 <li key={item.label}>
                   <Link
                     to={item.to}
-                    className="text-cream/70 hover:text-gold transition-colors text-sm flex items-center group"
+                    className="text-cream/90 hover:text-gold transition-colors text-sm flex items-center group"
                   >
                     <ArrowRight className="h-4 w-4 mr-2 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                     {item.label}
@@ -106,7 +109,7 @@ export function Footer() {
                 <li key={cat.id}>
                   <Link
                     to={`/catalogo?categoria=${cat.slug}`}
-                    className="text-cream/70 hover:text-gold transition-colors text-sm flex items-center group"
+                    className="text-cream/90 hover:text-gold transition-colors text-sm flex items-center group"
                   >
                     <ArrowRight className="h-4 w-4 mr-2 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                     {cat.name}
@@ -125,7 +128,7 @@ export function Footer() {
               {contactInfo.address && (
                 <li className="flex items-start space-x-3">
                   <MapPin className="h-5 w-5 text-gold shrink-0 mt-0.5" />
-                  <span className="text-cream/70 text-sm">{contactInfo.address}</span>
+                  <span className="text-cream/90 text-sm">{contactInfo.address}</span>
                 </li>
               )}
               {contactInfo.phone && (
@@ -153,7 +156,7 @@ export function Footer() {
               {contactInfo.schedule && (
                 <li className="flex items-start space-x-3">
                   <Clock className="h-5 w-5 text-gold shrink-0 mt-0.5" />
-                  <span className="text-cream/70 text-sm">{contactInfo.schedule}</span>
+                  <span className="text-cream/90 text-sm">{contactInfo.schedule}</span>
                 </li>
               )}
             </ul>
@@ -165,14 +168,14 @@ export function Footer() {
       <div className="border-t border-cream/10">
         <div className="container mx-auto px-4 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-cream/50 text-sm">
+            <p className="text-cream/80 text-sm">
               © {currentYear} M&amp;D Hijos del Rey. Todos los derechos reservados.
             </p>
             <div className="flex items-center space-x-6 text-sm">
-              <Link to="/nosotros#privacidad" className="text-cream/50 hover:text-gold transition-colors">
+              <Link to="/nosotros#privacidad" className="text-cream/80 hover:text-gold transition-colors">
                 Política de Privacidad
               </Link>
-              <Link to="/nosotros#terminos" className="text-cream/50 hover:text-gold transition-colors">
+              <Link to="/nosotros#terminos" className="text-cream/80 hover:text-gold transition-colors">
                 Términos y Condiciones
               </Link>
             </div>

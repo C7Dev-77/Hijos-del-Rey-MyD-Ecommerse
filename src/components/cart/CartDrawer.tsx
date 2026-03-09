@@ -39,7 +39,7 @@ export function CartDrawer() {
                   ({items.length} {items.length === 1 ? 'item' : 'items'})
                 </span>
               </div>
-              <Button variant="ghost" size="icon" onClick={closeCart}>
+              <Button variant="ghost" size="icon" onClick={closeCart} aria-label="Cerrar carrito">
                 <X className="h-5 w-5" />
               </Button>
             </div>
@@ -79,12 +79,13 @@ export function CartDrawer() {
                             src={item.product.images[0]}
                             alt={item.product.name}
                             className="w-full h-full object-cover"
+                            loading="lazy"
                           />
                         </div>
 
                         {/* Details */}
                         <div className="flex-1 min-w-0">
-                          <Link 
+                          <Link
                             to={`/producto/${item.product.slug}`}
                             onClick={closeCart}
                             className="font-medium text-sm hover:text-primary transition-colors line-clamp-2"
@@ -101,6 +102,7 @@ export function CartDrawer() {
                               <button
                                 onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
                                 className="p-1.5 hover:bg-muted transition-colors"
+                                aria-label="Reducir cantidad"
                               >
                                 <Minus className="h-4 w-4" />
                               </button>
@@ -110,6 +112,7 @@ export function CartDrawer() {
                               <button
                                 onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
                                 className="p-1.5 hover:bg-muted transition-colors"
+                                aria-label="Aumentar cantidad"
                               >
                                 <Plus className="h-4 w-4" />
                               </button>
@@ -117,6 +120,7 @@ export function CartDrawer() {
                             <button
                               onClick={() => removeItem(item.product.id)}
                               className="p-2 text-muted-foreground hover:text-destructive transition-colors"
+                              aria-label="Eliminar producto"
                             >
                               <Trash2 className="h-4 w-4" />
                             </button>
@@ -139,7 +143,7 @@ export function CartDrawer() {
                     Los gastos de envío se calculan en el checkout.
                   </p>
                   <div className="space-y-2">
-                    <Button 
+                    <Button
                       className="w-full bg-primary text-primary-foreground hover:bg-wood-light"
                       asChild
                     >
@@ -148,8 +152,8 @@ export function CartDrawer() {
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </Link>
                     </Button>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className="w-full"
                       onClick={clearCart}
                     >

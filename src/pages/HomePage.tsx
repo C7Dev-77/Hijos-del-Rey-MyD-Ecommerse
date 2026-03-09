@@ -169,6 +169,7 @@ function CategoriesSection() {
                       src={category.image}
                       alt={category.name}
                       className="w-full h-full object-cover"
+                      loading="lazy"
                     />
                   </div>
                   <div className="absolute inset-0 bg-gradient-to-t from-charcoal/80 via-charcoal/30 to-transparent" />
