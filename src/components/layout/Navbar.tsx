@@ -90,7 +90,7 @@ export function Navbar() {
               whileHover={{ scale: 1.05 }}
               className="flex items-center space-x-2"
             >
-              <img src="/logo.png" alt="M&D Hijos del Rey Logo" className="h-10 w-auto object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+              <img fetchPriority="high" width={200} height={40} src="/logo.png" alt="M&D Hijos del Rey Logo" className="h-10 w-auto object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
               <div className={cn('font-display text-2xl font-bold hidden sm:block', textColor)}>
                 M&D <span className="text-gold">Hijos del Rey</span>
               </div>

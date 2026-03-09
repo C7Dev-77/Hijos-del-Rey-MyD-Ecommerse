@@ -29,7 +29,7 @@ export function Footer() {
           {/* Brand Column */}
           <div className="space-y-6">
             <Link to="/" className="inline-flex items-center gap-3">
-              <img src="/logo.png" alt="M&D Hijos del Rey" className="h-12 w-auto" />
+              <img loading="lazy" width={200} height={48} src="/logo.png" alt="M&D Hijos del Rey" className="h-12 w-auto" />
             </Link>
             <p className="text-cream/90 text-sm leading-relaxed">
               Muebles artesanales colombianos de alta calidad. Cada pieza cuenta

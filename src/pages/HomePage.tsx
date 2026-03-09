@@ -34,11 +34,13 @@ function HeroSection() {
   ];
 
   return (
-    <section ref={ref} className="relative h-screen overflow-hidden">
+    <section ref={ref} className="relative h-screen overflow-hidden bg-charcoal">
       <motion.div style={{ y }} className="absolute inset-0">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${heroSlides[0].image})` }}
+        <img
+          src={heroSlides[0].image}
+          alt={heroSlides[0].title}
+          className="w-full h-full object-cover"
+          fetchPriority="high"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-charcoal/80 via-charcoal/50 to-transparent" />
       </motion.div>
@@ -363,12 +365,12 @@ function NewArrivalsSection() {
 function CTASection() {
   const { homePageContent } = useAdminStore();
   return (
-    <section className="py-24 relative overflow-hidden">
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{
-          backgroundImage: 'url(https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=1920)',
-        }}
+    <section className="py-24 relative overflow-hidden bg-charcoal">
+      <img
+        src="https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=1920"
+        alt="About us background"
+        className="absolute inset-0 w-full h-full object-cover"
+        loading="lazy"
       />
       <div className="absolute inset-0 bg-charcoal/70" />
 
