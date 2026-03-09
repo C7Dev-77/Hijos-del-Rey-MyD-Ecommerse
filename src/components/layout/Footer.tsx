@@ -21,32 +21,7 @@ export function Footer() {
 
   return (
     <footer className="bg-charcoal text-cream">
-      {/* Newsletter Section */}
-      <div className="border-b border-cream/10">
-        <div className="container mx-auto px-4 lg:px-8 py-12">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div>
-              <h3 className="font-display text-2xl font-semibold mb-2">
-                Suscríbete a nuestro boletín
-              </h3>
-              <p className="text-cream/70">
-                Recibe ofertas exclusivas y novedades directamente en tu correo.
-              </p>
-            </div>
-            <div className="flex w-full md:w-auto gap-2">
-              <Input
-                type="email"
-                placeholder="Tu correo electrónico"
-                className="bg-cream/10 border-cream/20 text-cream placeholder:text-cream/50 w-full md:w-72"
-              />
-              <Button className="bg-gold text-charcoal hover:bg-gold/90 whitespace-nowrap">
-                Suscribirse
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+
 
       {/* Main Footer */}
       <div className="container mx-auto px-4 lg:px-8 py-16">

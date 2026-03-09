@@ -473,7 +473,7 @@ export function AIChatBot() {
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 2, type: 'spring', stiffness: 260, damping: 20 }}
-                className={`fixed bottom-[4.5rem] sm:bottom-[6.5rem] right-4 sm:right-6 z-40 w-[50px] h-[50px] sm:w-[60px] sm:h-[60px] rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ${isOpen
+                className={`fixed bottom-[4.75rem] sm:bottom-[6.5rem] right-4 sm:right-6 z-40 w-[50px] h-[50px] sm:w-[60px] sm:h-[60px] rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ${isOpen
                     ? 'bg-charcoal/90 hover:bg-charcoal shadow-charcoal/20'
                     : 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/40 ring-4 ring-blue-600/20 animate-pulse-soft'
                     } hover:scale-110 active:scale-95 group`}
