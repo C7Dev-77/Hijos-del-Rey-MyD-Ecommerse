@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Heart, Users, Award, Leaf, type LucideIcon } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
@@ -22,6 +24,21 @@ export default function NosotrosPage() {
     description: 'Conoce la historia de M&D Hijos del Rey, fabricantes de muebles artesanales en Sampués, Sucre, Colombia. Más de 30 años de tradición carpintera, madera sostenible y diseño de excelencia.',
     path: '/nosotros',
   });
+
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.hash) {
+      const id = location.hash.replace('#', '');
+      const element = document.getElementById(id);
+      if (element) {
+        // Un pequeño timeout asegura que la página haya renderizado antes de hacer scroll
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      }
+    }
+  }, [location]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -216,6 +233,80 @@ export default function NosotrosPage() {
                 </motion.div>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* Políticas y Términos */}
+        <section id="privacidad" className="py-24 bg-background">
+          <div className="container mx-auto px-4 lg:px-8 max-w-4xl">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="mb-16"
+            >
+              <h2 className="font-display text-3xl md:text-4xl font-bold text-charcoal mb-8 border-b border-border pb-4">
+                Política de Privacidad
+              </h2>
+              <div className="prose prose-stone max-w-none text-muted-foreground space-y-4">
+                <p>
+                  En <strong>M&D Hijos del Rey</strong> valoramos y respetamos tu privacidad. Esta política de privacidad describe cómo recopilamos, utilizamos y protegemos la información personal que nos proporcionas cuando visitas nuestro sitio web o te comunicas con nosotros.
+                </p>
+                <h3 className="font-display text-xl font-semibold text-charcoal mt-6 mb-2">1. Información que Recopilamos</h3>
+                <p>
+                  Recopilamos información que nos proporcionas de forma voluntaria, como tu nombre, dirección de correo electrónico, número de teléfono y dirección de envío cuando realizas una cotización, te registras en nuestra página o nos contactas a través de nuestros canales (WhatsApp, correo electrónico).
+                </p>
+                <h3 className="font-display text-xl font-semibold text-charcoal mt-6 mb-2">2. Uso de la Información</h3>
+                <p>
+                  Utilizamos tu información personal principalmente para:
+                </p>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>Procesar y gestionar tus cotizaciones y pedidos.</li>
+                  <li>Comunicarnos contigo respecto al estado de tu pedido, consultas o soporte.</li>
+                  <li>Mejorar nuestros productos, servicios y la experiencia en nuestro sitio web.</li>
+                </ul>
+                <h3 className="font-display text-xl font-semibold text-charcoal mt-6 mb-2">3. Protección de Datos</h3>
+                <p>
+                  Implementamos medidas de seguridad para proteger tu información personal contra acceso no autorizado, alteración, divulgación o destrucción. No vendemos, intercambiamos ni transferimos tu información a terceros, excepto cuando sea estrictamente necesario para cumplir con un pedido (por ejemplo, servicios de mensajería) o cuando la ley lo exija.
+                </p>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
+        <section id="terminos" className="py-24 bg-cream">
+          <div className="container mx-auto px-4 lg:px-8 max-w-4xl">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="mb-16"
+            >
+              <h2 className="font-display text-3xl md:text-4xl font-bold text-charcoal mb-8 border-b border-border pb-4">
+                Términos y Condiciones
+              </h2>
+              <div className="prose prose-stone max-w-none text-muted-foreground space-y-4">
+                <p>
+                  Al acceder y utilizar el sitio web de <strong>M&D Hijos del Rey</strong>, aceptas estar sujeto a los siguientes términos y condiciones. Si no estás de acuerdo con alguna parte de estos términos, te recomendamos no utilizar nuestro sitio.
+                </p>
+                <h3 className="font-display text-xl font-semibold text-charcoal mt-6 mb-2">1. Productos y Cotizaciones</h3>
+                <p>
+                  Nuestros muebles son fabricados de manera artesanal. Las imágenes en nuestra web son representativas y pueden presentar ligeras variaciones en la textura y el color de la madera, ya que cada pieza es única. Todas las cotizaciones están sujetas a la disponibilidad de materiales y la confirmación final por parte de nuestro equipo a través de WhatsApp.
+                </p>
+                <h3 className="font-display text-xl font-semibold text-charcoal mt-6 mb-2">2. Precios y Pagos</h3>
+                <p>
+                  Los precios mostrados en la página o compartidos en cotizaciones son valores de referencia. El monto final, que puede incluir costos de personalización y envío, será confirmado durante la comunicación directa. Los pagos se procesan a través de los medios autorizados (Wompi, transferencias o consignaciones directas que te indicaremos oportunamente).
+                </p>
+                <h3 className="font-display text-xl font-semibold text-charcoal mt-6 mb-2">3. Envíos y Entregas</h3>
+                <p>
+                  Los tiempos de entrega varían según la complejidad del pedido y la disponibilidad logística. Te informaremos el tiempo estimado al confirmar tu pedido. M&D Hijos del Rey hace todo lo posible por cumplir con los plazos acordados, pero no se hace responsable de retrasos causados por terceros en logística.
+                </p>
+                <h3 className="font-display text-xl font-semibold text-charcoal mt-6 mb-2">4. Garantía y Cambios</h3>
+                <p>
+                  Ofrecemos garantía por defectos de fabricación. Sin embargo, no aceptamos devoluciones por cambios de opinión o daños ocasionados por mal uso, humedad excesiva u otros factores externos después de la entrega. Ante cualquier novedad de fabricación, por favor contáctenos durante los primeros 5 días luego de recibir su producto.
+                </p>
+              </div>
+            </motion.div>
           </div>
         </section>
       </main>

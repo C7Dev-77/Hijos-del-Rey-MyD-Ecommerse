@@ -169,10 +169,10 @@ export function Footer() {
               © {currentYear} M&amp;D Hijos del Rey. Todos los derechos reservados.
             </p>
             <div className="flex items-center space-x-6 text-sm">
-              <Link to="#" className="text-cream/50 hover:text-gold transition-colors">
+              <Link to="/nosotros#privacidad" className="text-cream/50 hover:text-gold transition-colors">
                 Política de Privacidad
               </Link>
-              <Link to="#" className="text-cream/50 hover:text-gold transition-colors">
+              <Link to="/nosotros#terminos" className="text-cream/50 hover:text-gold transition-colors">
                 Términos y Condiciones
               </Link>
             </div>
