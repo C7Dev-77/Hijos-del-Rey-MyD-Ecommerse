@@ -88,7 +88,14 @@ export function SearchModal({ isOpen, onClose }: { isOpen: boolean; onClose: () 
                                             className="w-full flex items-center gap-4 p-3 hover:bg-muted rounded-xl transition-colors text-left"
                                         >
                                             <div className="w-12 h-12 rounded-lg bg-black/5 overflow-hidden shrink-0">
-                                                <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
+                                                <img
+                                                    src={product.images[0]}
+                                                    alt={product.name}
+                                                    className="w-full h-full object-cover"
+                                                    loading="lazy"
+                                                    width={48}
+                                                    height={48}
+                                                />
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <h4 className="font-medium text-foreground truncate">{product.name}</h4>

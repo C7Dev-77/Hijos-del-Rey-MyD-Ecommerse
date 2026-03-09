@@ -89,6 +89,9 @@ export default function BlogPostPage() {
                             src={post.image}
                             alt={post.title}
                             className="w-full h-full object-cover"
+                            fetchPriority="high"
+                            width={1200}
+                            height={600}
                         />
                     </motion.div>
 
