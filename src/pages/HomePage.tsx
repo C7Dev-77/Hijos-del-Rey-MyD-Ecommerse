@@ -417,8 +417,8 @@ function CTASection() {
 // Main Home Page
 export default function HomePage() {
   usePageSEO({
-    title: 'Muebles Artesanales Colombianos — Salas, Comedores, Alcobas',
-    description: 'M&D Hijos del Rey: muebles artesanales colombianos hechos a mano. Salas, comedores, alcobas y poltronas en madera de alta calidad. Envío a todo Colombia. Cotiza gratis tu mueble a medida.',
+    title: 'Fábrica de Muebles en Sampués Sucre — Muebles Tapizados & Artesanales',
+    description: 'M&D Hijos del Rey: Fábrica de muebles artesanales en Sampués, Sucre. Expertos en muebles tapizados, salas, comedores y alcobas. Calidad artesanal con envío a toda Colombia.',
     path: '/',
   });
 
