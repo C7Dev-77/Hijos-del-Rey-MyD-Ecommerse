@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === "development" && componentTagger(),
     Sitemap({
-      hostname: "https://mydhijosdelrey.com",
+      hostname: "https://hijos-del-rey-myd.vercel.app",
       dynamicRoutes: [
         "/catalogo",
         "/nosotros",
