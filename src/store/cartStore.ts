@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 interface CartState {
   items: CartItem[];
   isOpen: boolean;
-  addItem: (product: Product, quantity?: number) => void;
+  addItem: (product: Product, quantity?: number, madeToOrder?: boolean) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
@@ -16,6 +16,7 @@ interface CartState {
   toggleCart: () => void;
   getTotal: () => number;
   getItemCount: () => number;
+  hasPreOrderItems: () => boolean;
 }
 
 export const useCartStore = create<CartState>()(
@@ -24,7 +25,7 @@ export const useCartStore = create<CartState>()(
       items: [],
       isOpen: false,
 
-      addItem: (product: Product, quantity = 1) => {
+      addItem: (product: Product, quantity = 1, madeToOrder = false) => {
         const { isAuthenticated } = useAuthStore.getState();
         if (!isAuthenticated) {
           toast.error("Para hacer el pedido, por favor inicia sesión o regístrate", { duration: 4000 });
@@ -43,7 +44,14 @@ export const useCartStore = create<CartState>()(
             ),
           });
         } else {
-          set({ items: [...items, { product, quantity }] });
+          set({ items: [...items, { product, quantity, madeToOrder }] });
+        }
+
+        if (madeToOrder) {
+          toast.info("🛠️ Pedido por fabricación agregado al carrito", {
+            description: "Se requiere el 40% de anticipo. Tiempo de entrega: 7 días o más según el mueble.",
+            duration: 5500,
+          });
         }
 
         // Auto-open cart when adding item
@@ -84,6 +92,10 @@ export const useCartStore = create<CartState>()(
 
       getItemCount: () => {
         return get().items.reduce((count, item) => count + item.quantity, 0);
+      },
+
+      hasPreOrderItems: () => {
+        return get().items.some(item => item.madeToOrder === true);
       },
     }),
     {

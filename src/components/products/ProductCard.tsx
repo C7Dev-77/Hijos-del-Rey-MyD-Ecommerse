@@ -1,7 +1,7 @@
 import { forwardRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ShoppingCart, Heart, Eye } from 'lucide-react';
+import { ShoppingCart, Heart, Eye, Clock } from 'lucide-react';
 import { Product, formatPrice, CATEGORIES } from '@/data/mock';
 import { useCartStore } from '@/store/cartStore';
 import { useWishlistStore } from '@/store/wishlistStore';
@@ -22,7 +22,8 @@ export const ProductCard = forwardRef<HTMLDivElement, ProductCardProps>(({ produ
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    addItem(product);
+    const madeToOrder = product.stock === 0;
+    addItem(product, 1, madeToOrder);
   };
 
   return (
@@ -65,6 +66,12 @@ export const ProductCard = forwardRef<HTMLDivElement, ProductCardProps>(({ produ
                   Top Ventas
                 </Badge>
               )}
+              {product.stock === 0 && (
+                <Badge className="bg-amber-600 text-white flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  Bajo pedido
+                </Badge>
+              )}
             </div>
 
             {/* Quick Actions */}
@@ -103,10 +110,18 @@ export const ProductCard = forwardRef<HTMLDivElement, ProductCardProps>(({ produ
             <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
               <Button
                 onClick={handleAddToCart}
-                className="w-full bg-primary text-primary-foreground hover:bg-wood-light shadow-lg"
+                className={cn(
+                  "w-full shadow-lg",
+                  product.stock === 0
+                    ? "bg-amber-600 text-white hover:bg-amber-700"
+                    : "bg-primary text-primary-foreground hover:bg-wood-light"
+                )}
               >
-                <ShoppingCart className="mr-2 h-4 w-4" />
-                Añadir al Carrito
+                {product.stock === 0 ? (
+                  <><Clock className="mr-2 h-4 w-4" />Fabricar a Pedido</>
+                ) : (
+                  <><ShoppingCart className="mr-2 h-4 w-4" />Añadir al Carrito</>
+                )}
               </Button>
             </div>
           </div>

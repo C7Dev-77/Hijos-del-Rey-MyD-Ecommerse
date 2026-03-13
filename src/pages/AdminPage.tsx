@@ -5,8 +5,8 @@ import {
   LayoutDashboard, Package, ShoppingCart, FileText, LogOut,
   TrendingUp, DollarSign, Eye, Menu, X, Plus, Pencil, Trash2,
   Save, Image as ImageIcon, Search, Home, Clock, Truck, CheckCircle2,
-  XCircle, MapPin, CreditCard, User, ChevronRight, Phone,
-  Filter, RefreshCw, PackageOpen, AlertTriangle, Settings, ClipboardList, Users2
+  XCircle, MapPin, CreditCard, User, ChevronRight, ChevronLeft, Phone,
+  Filter, RefreshCw, PackageOpen, AlertTriangle, Settings, ClipboardList, Users2, PanelLeftClose, PanelLeftOpen
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { Button } from '@/components/ui/button';
@@ -80,33 +80,59 @@ export default function AdminPage() {
     <div className="min-h-screen bg-muted flex">
       {/* Sidebar */}
       <aside className={cn(
-        'fixed lg:static inset-y-0 left-0 z-50 w-64 bg-sidebar transition-transform duration-300',
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0 lg:w-20'
+        'fixed lg:static inset-y-0 left-0 z-50 bg-sidebar transition-all duration-300',
+        sidebarOpen ? 'w-64 translate-x-0' : '-translate-x-full lg:translate-x-0 lg:w-20'
       )}>
         <div className="flex flex-col h-full">
-          <div className="p-6 border-b border-sidebar-border">
+          <div className="p-6 border-b border-sidebar-border overflow-hidden">
             <Link to="/" className="font-display text-lg font-bold text-sidebar-foreground">
-              {sidebarOpen ? <span>M&D <span className="text-gold">Admin</span></span> : 'M&D'}
+              {sidebarOpen ? <span>M&D <span className="text-gold">Admin</span></span> : <span className="text-gold">M</span>}
             </Link>
           </div>
-          <nav className="flex-1 p-4 space-y-2">
+          <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
             {navItems.map(item => (
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
+                title={!sidebarOpen ? item.label : ''}
                 className={cn(
                   'w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors',
+                  !sidebarOpen && 'justify-center',
                   activeTab === item.id ? 'bg-sidebar-accent text-sidebar-primary' : 'text-sidebar-foreground hover:bg-sidebar-accent'
                 )}
               >
-                <item.icon className="h-5 w-5" />
-                {sidebarOpen && <span>{item.label}</span>}
+                <item.icon className="h-5 w-5 shrink-0" />
+                {sidebarOpen && <span className="truncate">{item.label}</span>}
               </button>
             ))}
           </nav>
-          <div className="p-4 border-t border-sidebar-border">
-            <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 text-sidebar-foreground hover:text-destructive">
-              <LogOut className="h-5 w-5" />{sidebarOpen && <span>Cerrar Sesión</span>}
+          {/* Bottom section: Logout + Collapse button */}
+          <div className="p-4 border-t border-sidebar-border space-y-2">
+            <button
+              onClick={handleLogout}
+              title={!sidebarOpen ? 'Cerrar Sesión' : ''}
+              className={cn(
+                "w-full flex items-center gap-3 px-4 py-3 text-sidebar-foreground hover:text-destructive transition-colors rounded-lg hover:bg-sidebar-accent",
+                !sidebarOpen && 'justify-center'
+              )}
+            >
+              <LogOut className="h-5 w-5 shrink-0" />
+              {sidebarOpen && <span>Cerrar Sesión</span>}
+            </button>
+            {/* Collapse/Expand toggle - only visible on desktop */}
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              title={sidebarOpen ? 'Colapsar menú' : 'Expandir menú'}
+              className={cn(
+                "hidden lg:flex w-full items-center gap-3 px-4 py-3 rounded-lg transition-colors text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+                !sidebarOpen && 'justify-center'
+              )}
+            >
+              {sidebarOpen ? (
+                <><PanelLeftClose className="h-5 w-5 shrink-0" /><span className="text-sm">Colapsar menú</span></>
+              ) : (
+                <PanelLeftOpen className="h-5 w-5 shrink-0" />
+              )}
             </button>
           </div>
         </div>

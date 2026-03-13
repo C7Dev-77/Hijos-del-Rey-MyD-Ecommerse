@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Plus, Minus, ShoppingBag, Trash2, ArrowRight } from 'lucide-react';
+import { X, Plus, Minus, ShoppingBag, Trash2, ArrowRight, Clock, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -7,7 +7,7 @@ import { useCartStore } from '@/store/cartStore';
 import { formatPrice } from '@/data/mock';
 
 export function CartDrawer() {
-  const { items, isOpen, closeCart, removeItem, updateQuantity, getTotal, clearCart } = useCartStore();
+  const { items, isOpen, closeCart, removeItem, updateQuantity, getTotal, clearCart, hasPreOrderItems } = useCartStore();
 
   return (
     <AnimatePresence>
@@ -95,6 +95,15 @@ export function CartDrawer() {
                           <p className="text-sm text-muted-foreground mt-1">
                             {formatPrice(item.product.price)}
                           </p>
+                          {/* Badge fabricar a pedido */}
+                          {item.madeToOrder && (
+                            <div className="flex items-center gap-1 mt-1.5">
+                              <Clock className="h-3 w-3 text-amber-600" />
+                              <span className="text-xs text-amber-700 dark:text-amber-400 font-medium">
+                                Fabricar a pedido • 7+ días
+                              </span>
+                            </div>
+                          )}
 
                           {/* Quantity Controls */}
                           <div className="flex items-center justify-between mt-3">
@@ -139,6 +148,25 @@ export function CartDrawer() {
                       {formatPrice(getTotal())}
                     </span>
                   </div>
+
+                  {/* Aviso de anticipo si hay pre-pedidos */}
+                  {hasPreOrderItems() && (
+                    <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700 p-3 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
+                        <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
+                          Anticipo requerido (40%):
+                          <span className="ml-1 font-bold">
+                            {formatPrice(getTotal() * 0.4)}
+                          </span>
+                        </p>
+                      </div>
+                      <p className="text-xs text-amber-700 dark:text-amber-400 pl-6">
+                        Tu carrito incluye muebles por fabricar. Se cobrará el 40% al pagar y el resto al entregar.
+                      </p>
+                    </div>
+                  )}
+
                   <p className="text-xs text-muted-foreground">
                     Los gastos de envío se calculan en el checkout.
                   </p>

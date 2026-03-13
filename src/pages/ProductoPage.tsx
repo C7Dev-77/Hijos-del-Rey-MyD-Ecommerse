@@ -12,7 +12,10 @@ import {
   Truck,
   Shield,
   RotateCcw,
-  Check
+  Check,
+  Clock,
+  AlertCircle,
+  Wrench
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
@@ -89,7 +92,8 @@ export default function ProductoPage() {
   ).slice(0, 4);
 
   const handleAddToCart = () => {
-    addItem(product, quantity);
+    const madeToOrder = product.stock === 0;
+    addItem(product, quantity, madeToOrder);
   };
 
   const nextImage = () => {
@@ -250,17 +254,40 @@ export default function ProductoPage() {
                 {product.shortDescription}
               </p>
 
-              {/* Stock */}
-              <div className="flex items-center gap-2">
+              {/* Stock / Disponibilidad */}
+              <div className="flex flex-col gap-2">
                 {product.stock > 0 ? (
-                  <>
+                  <div className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-forest" />
                     <span className="text-sm text-forest">
                       En stock ({product.stock} disponibles)
                     </span>
-                  </>
+                  </div>
                 ) : (
-                  <span className="text-sm text-destructive">Agotado</span>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-amber-600" />
+                      <span className="text-sm font-semibold text-amber-700 dark:text-amber-400">
+                        No disponible para entrega inmediata
+                      </span>
+                    </div>
+                    {/* Panel informativo de fabricación */}
+                    <div className="rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700 p-4 space-y-2">
+                      <div className="flex items-start gap-2">
+                        <Wrench className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                        <p className="text-sm text-amber-800 dark:text-amber-300 font-medium">
+                          Este mueble se <strong>fabrica a pedido</strong>. El tiempo de entrega es de <strong>7 días o más</strong> según el mueble y la cantidad solicitada.
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                        <p className="text-sm text-amber-800 dark:text-amber-300">
+                          Para confirmar el pedido se requiere un <strong>anticipo del 40%</strong> del valor total.
+                          El saldo restante se cancela al confirmar la entrega.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
 
@@ -275,7 +302,7 @@ export default function ProductoPage() {
                   </button>
                   <span className="px-6 font-medium">{quantity}</span>
                   <button
-                    onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
+                    onClick={() => setQuantity(product.stock > 0 ? Math.min(product.stock, quantity + 1) : quantity + 1)}
                     className="p-3 hover:bg-muted transition-colors"
                   >
                     <Plus className="h-4 w-4" />
@@ -284,12 +311,19 @@ export default function ProductoPage() {
 
                 <Button
                   size="lg"
-                  className="flex-1 bg-primary text-primary-foreground hover:bg-wood-light"
+                  className={cn(
+                    "flex-1",
+                    product.stock === 0
+                      ? "bg-amber-600 text-white hover:bg-amber-700"
+                      : "bg-primary text-primary-foreground hover:bg-wood-light"
+                  )}
                   onClick={handleAddToCart}
-                  disabled={product.stock === 0}
                 >
-                  <ShoppingCart className="mr-2 h-5 w-5" />
-                  Añadir al Carrito
+                  {product.stock === 0 ? (
+                    <><Wrench className="mr-2 h-5 w-5" />Fabricar a Pedido</>
+                  ) : (
+                    <><ShoppingCart className="mr-2 h-5 w-5" />Añadir al Carrito</>
+                  )}
                 </Button>
 
                 <Button
@@ -431,14 +465,24 @@ export default function ProductoPage() {
         <div className="flex items-center gap-4">
           <div>
             <p className="font-display text-lg font-bold">{formatPrice(product.price)}</p>
+            {product.stock === 0 && (
+              <p className="text-xs text-amber-600 font-medium">7+ días · Anticipo 40%</p>
+            )}
           </div>
           <Button
-            className="flex-1 bg-primary text-primary-foreground"
+            className={cn(
+              "flex-1",
+              product.stock === 0
+                ? "bg-amber-600 text-white hover:bg-amber-700"
+                : "bg-primary text-primary-foreground"
+            )}
             onClick={handleAddToCart}
-            disabled={product.stock === 0}
           >
-            <ShoppingCart className="mr-2 h-4 w-4" />
-            Añadir al Carrito
+            {product.stock === 0 ? (
+              <><Wrench className="mr-2 h-4 w-4" />Fabricar a Pedido</>
+            ) : (
+              <><ShoppingCart className="mr-2 h-4 w-4" />Añadir al Carrito</>
+            )}
           </Button>
         </div>
       </div>

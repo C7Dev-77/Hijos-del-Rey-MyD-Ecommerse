@@ -87,6 +87,7 @@ export interface BlogPost {
 export interface CartItem {
   product: Product;
   quantity: number;
+  madeToOrder?: boolean; // Producto fabricado a pedido (sin stock)
 }
 
 // Mock Categories
