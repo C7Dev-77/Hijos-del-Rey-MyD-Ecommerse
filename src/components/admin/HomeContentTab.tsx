@@ -217,7 +217,7 @@ export default function HomeContentTab() {
                                     <Textarea
                                         value={storeData.metaDescription}
                                         onChange={e => setStoreData({ ...storeData, metaDescription: e.target.value })}
-                                        placeholder="Muebles artesanales colombianos de alta calidad. Sofás, comedores, alcobas y más. Hecho a mano en Sampués, Sucre. ¡Cotiza gratis!"
+                                        placeholder="Muebles artesanales de Sampués de alta calidad. Sofás, comedores, alcobas y más. Hecho a mano en Sampués, Sucre. ¡Cotiza gratis!"
                                         rows={3}
                                     />
                                     <p className="text-xs text-muted-foreground">Recomendado: 120-155 caracteres. Incluye palabras clave y una llamada a la acción.</p>
@@ -266,19 +266,10 @@ export default function HomeContentTab() {
                                 <Zap className="h-5 w-5 text-primary" /> Configuraciones de Pagos e Integraciones
                             </h3>
                             <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 text-sm space-y-1">
-                                <p className="font-medium text-primary">Ajustes avanzados y Checkout</p>
-                                <p className="text-muted-foreground">Configura los mensajes para tus clientes y las llaves de pasarelas de pago. Protege siempre tu llave privada.</p>
+                                <p className="font-medium text-primary">Ajustes de Checkout y Mensajes</p>
+                                <p className="text-muted-foreground">Configura los mensajes para tus clientes. Los pedidos se procesan directamente por WhatsApp.</p>
                             </div>
                             <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label>Llave Pública de Wompi (Public Key)</Label>
-                                    <Input
-                                        value={storeData.wompiPublicKey || ''}
-                                        onChange={e => setStoreData({ ...storeData, wompiPublicKey: e.target.value })}
-                                        placeholder="pub_test_..."
-                                    />
-                                    <p className="text-xs text-muted-foreground">Tu llave pública para transacciones seguras. Empieza por pub_test_ o pub_prod_</p>
-                                </div>
                                 <div className="space-y-2">
                                     <Label>Plantilla de mensaje Botón Flotante WhatsApp</Label>
                                     <Textarea
@@ -296,7 +287,7 @@ export default function HomeContentTab() {
                                         rows={3}
                                         placeholder="Te redireccionaremos a WhatsApp para completar..."
                                     />
-                                    <p className="text-xs text-muted-foreground">Este mensaje aparece como alternativa o junto al botón de pago con Wompi.</p>
+                                    <p className="text-xs text-muted-foreground">Este mensaje aparece como alternativa al botón de WhatsApp.</p>
                                 </div>
                             </div>
                             <Button onClick={handleSaveStore} disabled={isSaving} className="w-full bg-primary text-primary-foreground">

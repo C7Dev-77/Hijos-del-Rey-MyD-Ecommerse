@@ -20,8 +20,8 @@ export default function NosotrosPage() {
   const { aboutPageContent: a } = useAdminStore();
 
   usePageSEO({
-    title: 'Nuestra Historia — Más de 30 Años de Artesanía',
-    description: 'Conoce la historia de M&D Hijos del Rey, fabricantes de muebles artesanales en Sampués, Sucre, Colombia. Más de 30 años de tradición carpintera, madera sostenible y diseño de excelencia.',
+    title: 'Nuestra Historia — Más de 10 Años de Artesanía',
+    description: 'Conoce la historia de M&D Hijos del Rey, fabricantes de muebles artesanales en Sampués, Sucre, Colombia. Más de 10 años de tradición carpintera, madera sostenible y diseño de excelencia.',
     path: '/nosotros',
   });
 
@@ -295,7 +295,7 @@ export default function NosotrosPage() {
                 </p>
                 <h3 className="font-display text-xl font-semibold text-charcoal mt-6 mb-2">2. Precios y Pagos</h3>
                 <p>
-                  Los precios mostrados en la página o compartidos en cotizaciones son valores de referencia. El monto final, que puede incluir costos de personalización y envío, será confirmado durante la comunicación directa. Los pagos se procesan a través de los medios autorizados (Wompi, transferencias o consignaciones directas que te indicaremos oportunamente).
+                  Los precios mostrados en la página o compartidos en cotizaciones son valores de referencia. El monto final, que puede incluir costos de personalización y envío, será confirmado durante la comunicación directa. Los pagos se coordinan a través de WhatsApp, donde te indicaremos los datos para transferencia, consignación u otros medios autorizados.
                 </p>
                 <h3 className="font-display text-xl font-semibold text-charcoal mt-6 mb-2">3. Envíos y Entregas</h3>
                 <p>

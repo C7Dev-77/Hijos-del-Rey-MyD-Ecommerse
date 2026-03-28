@@ -2,15 +2,13 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  CreditCard,
   Truck,
   ChevronRight,
   Check,
   Building2,
   SmartphoneNfc,
   MessageCircle,
-  ShoppingCart,
-  ShieldCheck
+  ShoppingCart
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -30,13 +28,6 @@ import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 
-declare global {
-  interface Window {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    WidgetCheckout: any;
-  }
-}
-
 const checkoutSchema = z.object({
   firstName: z.string().min(2, 'Nombre requerido'),
   lastName: z.string().min(2, 'Apellido requerido'),
@@ -52,10 +43,10 @@ type CheckoutFormData = z.infer<typeof checkoutSchema>;
 
 export default function CheckoutPage() {
   const [deliveryMethod, setDeliveryMethod] = useState<'domicilio' | 'agencia'>('domicilio');
-  const [paymentMethod, setPaymentMethod] = useState<'transferencia' | 'nequi' | 'wompi'>('wompi');
+  const [paymentMethod, setPaymentMethod] = useState<'transferencia' | 'nequi'>('transferencia');
 
   const [isProcessing, setIsProcessing] = useState(false);
-  const [orderComplete, setOrderComplete] = useState<'wompi' | 'whatsapp' | false>(false);
+  const [orderComplete, setOrderComplete] = useState(false);
   const navigate = useNavigate();
 
   const { items, getTotal, clearCart } = useCartStore();
@@ -90,120 +81,7 @@ export default function CheckoutPage() {
   const onSubmit = async (data: CheckoutFormData) => {
     setIsProcessing(true);
 
-    if (paymentMethod === 'wompi') {
-      try {
-        // Validar que la llave de Wompi esté configurada correctamente
-        const wompiPublicKey = import.meta.env.VITE_WOMPI_PUBLIC_KEY;
-        const isKeyInvalid =
-          !wompiPublicKey ||
-          wompiPublicKey === '' ||
-          wompiPublicKey.includes('PEGA_TU') ||
-          // Detecta el formato incorrecto 'pub_prod_pub_test_...' que mezcla ambos prefijos
-          (wompiPublicKey.startsWith('pub_prod_') && wompiPublicKey.includes('pub_test')) ||
-          (!wompiPublicKey.startsWith('pub_test_') && !wompiPublicKey.startsWith('pub_prod_'));
-
-        if (isKeyInvalid) {
-          setIsProcessing(false);
-          toast({
-            title: "Llave de pago incorrecta",
-            description: "La llave de Wompi tiene un formato incorrecto. Mientras, puedes pagar por WhatsApp o transferencia.",
-            variant: "destructive"
-          });
-          return;
-        }
-
-        const isSandbox = wompiPublicKey.startsWith('pub_test_');
-        if (isSandbox) {
-          toast({
-            title: "🧪 Modo Sandbox — Cuenta en revisión",
-            description: "Wompi está en modo de PRUEBA. Los cobros no son reales hasta que Wompi apruebe tu cuenta.",
-            variant: "default"
-          });
-          // Sigue el flujo — útil para probar la integración completa
-        }
-
-        const reference = `ORDER-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-
-        // 1. Registrar intención en Supabase primero
-        const { error: dbError } = await supabase.from('orders').insert([
-          {
-            user_id: user?.id,
-            products: items,
-            total: total,
-            shipping_address: `${data.firstName} ${data.lastName} | ${data.address}, ${data.city} (${data.state}) | Tel: ${data.phone}`,
-            payment_method: 'wompi',
-            status: 'pending',
-            reference: reference
-          }
-        ]);
-
-        if (dbError) throw dbError;
-
-        // 2. Abrir Widget de Wompi
-        const checkout = new window.WidgetCheckout({
-          currency: 'COP',
-          amountInCents: total * 100,
-          reference: reference,
-          publicKey: wompiPublicKey,
-          customerData: {
-            email: data.email,
-            fullName: `${data.firstName} ${data.lastName}`,
-            phoneNumber: data.phone,
-            phoneNumberPrefix: '+57'
-          },
-          shippingAddress: {
-            addressLine1: data.address,
-            city: data.city,
-            phoneNumber: data.phone,
-            region: data.state,
-            country: 'CO'
-          }
-        });
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        checkout.open((result: any) => {
-          const transaction = result.transaction;
-          if (transaction.status === 'APPROVED') {
-            toast({
-              title: "¡Pago aprobado!",
-              description: "Tu pedido ha sido procesado con éxito.",
-              variant: "default"
-            });
-            // 3. Actualizar estado en Supabase
-            supabase.from('orders')
-              .update({ status: 'processing' })
-              .eq('reference', reference)
-              .then(({ error }) => {
-                if (error) console.error("Error updating order status:", error);
-              });
-
-            setIsProcessing(false);
-            setOrderComplete('wompi');
-            clearCart();
-          } else {
-            setIsProcessing(false);
-            toast({
-              title: "Pago no completado",
-              description: `Estado: ${transaction.status}. Intenta de nuevo o usa WhatsApp.`,
-              variant: "destructive"
-            });
-          }
-        });
-
-        return; // Detener aquí para Wompi
-      } catch (e) {
-        console.error("Wompi Error:", e);
-        setIsProcessing(false);
-        toast({
-          title: "Error al iniciar pago",
-          description: "No pudimos conectar con la pasarela. Prueba WhatsApp.",
-          variant: "destructive"
-        });
-        return;
-      }
-    }
-
-    // 1. Preparar el mensaje de WhatsApp detallado (Flujo Anterior)
+// 1. Preparar el mensaje de WhatsApp detallado (Flujo Anterior)
     let msj = `¡Hola! 👋 Me gustaría concretar el siguiente pedido:\n\n`;
     // ... rest of WhatsApp logic ...
     msj += `*👤 DATOS DEL CLIENTE*\n`;
@@ -246,7 +124,7 @@ export default function CheckoutPage() {
     window.open(whatsappUrl, '_blank');
 
     setIsProcessing(false);
-    setOrderComplete('whatsapp');
+    setOrderComplete(true);
     clearCart();
   };
 
@@ -279,7 +157,6 @@ export default function CheckoutPage() {
   }
 
   if (orderComplete) {
-    const isWompi = orderComplete === 'wompi';
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <Navbar />
@@ -287,54 +164,37 @@ export default function CheckoutPage() {
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            className={`w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center shadow-lg ${isWompi
-              ? 'bg-primary shadow-primary/30'
-              : 'bg-[#25D366] shadow-[#25D366]/30'
-              }`}
+            className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center shadow-lg bg-[#25D366] shadow-[#25D366]/30"
           >
             <Check className="h-10 w-10 text-white" />
           </motion.div>
 
           <h1 className="font-display text-3xl font-bold mb-4">
-            {isWompi ? '¡Pago Aprobado!' : '¡Redirigiendo a WhatsApp!'}
+            ¡Redirigiendo a WhatsApp!
           </h1>
           <p className="text-muted-foreground mb-8 text-lg">
-            {isWompi
-              ? 'Tu pago fue procesado exitosamente. Recibirás confirmación de tu pedido pronto.'
-              : 'Te hemos llevado a nuestro chat de WhatsApp con el resumen completo de tu pedido para coordinar el pago y la entrega.'}
+            Te hemos llevado a nuestro chat de WhatsApp con el resumen completo de tu pedido para coordinar el pago y la entrega.
           </p>
 
           <div className="bg-muted/50 rounded-xl p-6 mb-8 text-left border border-border">
             <h3 className="font-semibold mb-2 flex items-center gap-2">
-              {isWompi
-                ? <ShieldCheck className="h-5 w-5 text-primary" />
-                : <MessageCircle className="h-5 w-5 text-[#25D366]" />}
+              <MessageCircle className="h-5 w-5 text-[#25D366]" />
               ¿Qué sigue ahora?
             </h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              {isWompi ? (
-                <>
-                  <li>1. Tu pedido está registrado y en proceso.</li>
-                  <li>2. Nos pondremos en contacto para confirmar el envío.</li>
-                  <li>3. Recibirás actualizaciones del estado de tu entrega.</li>
-                </>
-              ) : (
-                <>
-                  <li>1. Envíanos el mensaje pre-generado por WhatsApp.</li>
-                  <li>2. Te confirmaremos disponibilidad y tiempos de entrega.</li>
-                  <li>3. Te proporcionaremos los datos exactos para el pago.</li>
-                </>
-              )}
+              <li>1. Envíanos el mensaje pre-generado por WhatsApp.</li>
+              <li>2. Te confirmaremos disponibilidad y tiempos de entrega.</li>
+              <li>3. Te proporcionaremos los datos exactos para el pago.</li>
             </ul>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button variant="outline" size="lg" onClick={() => navigate('/')}>
+            <button className="inline-flex items-center justify-center rounded-md border border-border bg-background px-6 py-2.5 text-sm font-medium hover:bg-muted transition-colors" onClick={() => navigate('/')}>
               Volver al Inicio
-            </Button>
-            <Button size="lg" onClick={() => navigate('/catalogo')} className="bg-primary text-primary-foreground">
+            </button>
+            <button className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-6 py-2.5 text-sm font-medium hover:bg-wood-light transition-colors" onClick={() => navigate('/catalogo')}>
               Ver más muebles
-            </Button>
+            </button>
           </div>
         </div>
         <Footer />
@@ -494,23 +354,6 @@ export default function CheckoutPage() {
 
                       <button
                         type="button"
-                        onClick={() => setPaymentMethod('wompi')}
-                        className={cn(
-                          'flex items-center gap-3 p-4 rounded-xl border-2 text-left transition-all',
-                          paymentMethod === 'wompi'
-                            ? 'border-primary bg-primary/5 shadow-sm'
-                            : 'border-border/60 hover:border-primary/40 bg-white'
-                        )}
-                      >
-                        <CreditCard className={cn("h-6 w-6 shrink-0", paymentMethod === 'wompi' ? 'text-primary' : 'text-muted-foreground')} />
-                        <div className="flex-1">
-                          <span className="font-medium text-charcoal block">Tarjeta / PSE / Otros</span>
-                          <span className="text-[10px] text-muted-foreground">Pago Seguro via Wompi</span>
-                        </div>
-                      </button>
-
-                      <button
-                        type="button"
                         onClick={() => setPaymentMethod('transferencia')}
                         className={cn(
                           'flex items-center gap-3 p-4 rounded-xl border-2 text-left transition-all',
@@ -600,28 +443,16 @@ export default function CheckoutPage() {
                   </p>
                 )}
 
-                {/* Botón Flujo de Wompi o WhatsApp */}
+                {/* Botón de WhatsApp */}
                 <Button
                   type="submit"
-                  form="checkout-form" // Link to the form above
+                  form="checkout-form"
                   size="lg"
                   disabled={isProcessing}
-                  className={cn(
-                    "w-full text-white hover:shadow-lg transition-all h-14 text-base relative overflow-hidden group",
-                    paymentMethod === 'wompi' ? "bg-primary hover:bg-wood-light" : "bg-[#25D366] hover:bg-[#20bd5a]"
-                  )}
+                  className="w-full text-white hover:shadow-lg transition-all h-14 text-base relative overflow-hidden group bg-[#25D366] hover:bg-[#20bd5a]"
                 >
-                  {paymentMethod === 'wompi' ? (
-                    <>
-                      <ShieldCheck className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
-                      {isProcessing ? 'Procesando Pago...' : 'Pagar de forma segura'}
-                    </>
-                  ) : (
-                    <>
-                      <MessageCircle className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
-                      {isProcessing ? 'Generando Pedido...' : 'Enviar Pedido por WhatsApp'}
-                    </>
-                  )}
+                  <MessageCircle className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
+                  {isProcessing ? 'Generando Pedido...' : 'Enviar Pedido por WhatsApp'}
                 </Button>
 
                 <p className="text-[11px] text-center text-muted-foreground mt-4 leading-relaxed">

@@ -75,7 +75,7 @@ export default function RegistroPage() {
           </h2>
           <p className="text-cream/80 text-lg">
             Crea tu cuenta y descubre el mundo de los
-            muebles artesanales colombianos.
+            muebles artesanales de Sampués.
           </p>
         </div>
       </div>

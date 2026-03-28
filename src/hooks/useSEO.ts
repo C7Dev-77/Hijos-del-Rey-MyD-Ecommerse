@@ -23,11 +23,11 @@ export function usePageSEO(options?: {
     useEffect(() => {
         const title = options?.title
             ? `${options.title} | M&D Hijos del Rey`
-            : storeSettings.metaTitle || 'M&D Hijos del Rey | Muebles Artesanales Colombianos';
+            : storeSettings.metaTitle || 'M&D Hijos del Rey | Muebles Artesanales Sampués';
 
         const description = options?.description
             || storeSettings.metaDescription
-            || 'Descubre muebles artesanales únicos de Colombia. Salas, comedores, alcobas y poltronas hechos a mano. Hijos del Rey, más de 30 años de tradición.';
+            || 'Descubre muebles artesanales únicos de Sucre. Salas, comedores, alcobas y poltronas hechos a mano. Hijos del Rey, más de 10 años de tradición.';
 
         const image = options?.image
             || (storeSettings.logoUrl?.startsWith('http')
@@ -146,7 +146,7 @@ export function useSEO() {
             '@type': 'FurnitureStore',
             name: 'M&D Hijos del Rey | Fábrica de Muebles en Sampués Sucre',
             alternateName: ['Hijos del Rey Muebles', 'Muebles Tapizados Sampués', 'Fábrica de Muebles Sampués'],
-            description: 'Fábrica de muebles artesanales y tapizados en Sampués, Sucre. Más de 30 años creando salas, comedores y alcobas de alta calidad con envío a toda Colombia.',
+            description: 'Fábrica de muebles artesanales y tapizados en Sampués, Sucre. Más de 10 años creando salas, comedores y alcobas de alta calidad con envío a toda Colombia.',
             url: SITE_URL,
             logo: `${SITE_URL}/logo.png`,
             image: `${SITE_URL}/logo.png`,

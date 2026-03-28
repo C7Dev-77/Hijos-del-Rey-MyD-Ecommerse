@@ -94,7 +94,7 @@ export interface CartItem {
 export const CATEGORIES: Category[] = [
   {
     id: '1',
-    name: 'Colección de Salas',
+    name: 'Salas',
     slug: 'sala',
     description: 'Piezas diseñadas para aportar personalidad y comodidad al hogar.',
     image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800',
@@ -102,7 +102,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     id: '2',
-    name: 'Colección de Comedores',
+    name: 'Comedores',
     slug: 'comedor',
     description: 'Espacios elegantes y resistentes creados para el encuentro familiar.',
     image: 'https://images.unsplash.com/photo-1617806118233-18e1de247200?w=800',
@@ -110,7 +110,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     id: '3',
-    name: 'Colección de Dormitorio',
+    name: 'Dormitorio',
     slug: 'alcobas',
     description: 'Diseños que combinan confort, funcionalidad y estilo para el descanso.',
     image: 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=800',
@@ -118,7 +118,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     id: '4',
-    name: 'Colección de poltronas',
+    name: 'Poltronas',
     slug: 'poltronas',
     description: 'Poltronas ideales para disfrutar de una buena lectura o descanso.',
     image: 'https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?w=800',

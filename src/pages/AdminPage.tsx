@@ -44,6 +44,7 @@ import { CATEGORIES, formatPrice, Product, BlogPost, Order } from '@/data/mock';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import HomeContentTab from '@/components/admin/HomeContentTab';
+import ImageUploader from '@/components/admin/ImageUploader';
 
 type AdminTab = 'dashboard' | 'products' | 'orders' | 'blog' | 'quotes' | 'home' | 'config' | 'nosotros';
 
@@ -106,8 +107,24 @@ export default function AdminPage() {
               </button>
             ))}
           </nav>
-          {/* Bottom section: Logout + Collapse button */}
-          <div className="p-4 border-t border-sidebar-border space-y-2">
+          {/* Bottom section: Collapse button + Logout */}
+          <div className="p-4 border-t border-sidebar-border flex flex-col gap-2">
+            {/* Collapse/Expand toggle - visible on desktop */}
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              title={sidebarOpen ? 'Colapsar menú' : 'Expandir menú'}
+              className={cn(
+                "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+                !sidebarOpen && 'justify-center'
+              )}
+            >
+              {sidebarOpen ? (
+                <><PanelLeftClose className="h-5 w-5 shrink-0" /><span className="truncate">Colapsar menú</span></>
+              ) : (
+                <PanelLeftOpen className="h-5 w-5 shrink-0" />
+              )}
+            </button>
+            
             <button
               onClick={handleLogout}
               title={!sidebarOpen ? 'Cerrar Sesión' : ''}
@@ -117,22 +134,7 @@ export default function AdminPage() {
               )}
             >
               <LogOut className="h-5 w-5 shrink-0" />
-              {sidebarOpen && <span>Cerrar Sesión</span>}
-            </button>
-            {/* Collapse/Expand toggle - only visible on desktop */}
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              title={sidebarOpen ? 'Colapsar menú' : 'Expandir menú'}
-              className={cn(
-                "hidden lg:flex w-full items-center gap-3 px-4 py-3 rounded-lg transition-colors text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
-                !sidebarOpen && 'justify-center'
-              )}
-            >
-              {sidebarOpen ? (
-                <><PanelLeftClose className="h-5 w-5 shrink-0" /><span className="text-sm">Colapsar menú</span></>
-              ) : (
-                <PanelLeftOpen className="h-5 w-5 shrink-0" />
-              )}
+              {sidebarOpen && <span className="truncate">Cerrar Sesión</span>}
             </button>
           </div>
         </div>
@@ -388,6 +390,24 @@ function DashboardTab() {
   );
 }
 
+// Componentes auxiliares para evitar la pérdida de foco en los inputs
+const HomeSec = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  <div className="bg-white rounded-xl border border-border p-6 mb-6">
+    <h3 className="font-display text-lg font-semibold mb-4 pb-3 border-b border-border">{title}</h3>
+    {children}
+  </div>
+);
+
+const HomeF = ({ label, value, onChange, multi = false, ph = '', help }: { label: string; value: string; onChange: (v: string) => void; multi?: boolean; ph?: string; help?: string }) => (
+  <div className="mb-4">
+    <Label className="text-xs text-muted-foreground mb-1 block">{label}</Label>
+    {multi
+      ? <Textarea value={value} onChange={e => onChange(e.target.value)} rows={3} className="resize-none" placeholder={ph} />
+      : <Input value={value} onChange={e => onChange(e.target.value)} placeholder={ph} />}
+    {help && <p className="text-[10px] text-muted-foreground mt-1">{help}</p>}
+  </div>
+);
+
 // ─────────────────────────────────────────────────────────
 // Home Tab — Editor de la página de Inicio
 // ─────────────────────────────────────────────────────────
@@ -409,22 +429,6 @@ function HomeTab() {
   const addPromoItem = () => setForm(prev => ({ ...prev, promos: [...prev.promos, { icon: '✨', text: '' }] }));
   const removePromoItem = (idx: number) => setForm(prev => ({ ...prev, promos: prev.promos.filter((_, i) => i !== idx) }));
 
-  const Sec = ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <div className="bg-white rounded-xl border border-border p-6 mb-6">
-      <h3 className="font-display text-lg font-semibold mb-4 pb-3 border-b border-border">{title}</h3>
-      {children}
-    </div>
-  );
-
-  const F = ({ label, value, onChange, multi = false, ph = '', help }: { label: string; value: string; onChange: (v: string) => void; multi?: boolean; ph?: string; help?: string }) => (
-    <div className="mb-4">
-      <Label className="text-xs text-muted-foreground mb-1 block">{label}</Label>
-      {multi
-        ? <Textarea value={value} onChange={e => onChange(e.target.value)} rows={3} className="resize-none" placeholder={ph} />
-        : <Input value={value} onChange={e => onChange(e.target.value)} placeholder={ph} />}
-      {help && <p className="text-[10px] text-muted-foreground mt-1">{help}</p>}
-    </div>
-  );
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 pb-16">
@@ -434,20 +438,20 @@ function HomeTab() {
         </Button>
       </div>
 
-      <Sec title="🖼️ Portada Gigante (Hero)">
-        <F label="Distintivo superior (Badge)" value={form.heroBadgeText} onChange={v => setField('heroBadgeText', v)} ph="✨ Nuevos diseños 2025" />
-        <F label="Título principal gigante" value={form.heroTitle} onChange={v => setField('heroTitle', v)} multi />
-        <F label="Subtítulo" value={form.heroSubtitle} onChange={v => setField('heroSubtitle', v)} multi />
+      <HomeSec title="🖼️ Portada Gigante (Hero)">
+        <HomeF label="Distintivo superior (Badge)" value={form.heroBadgeText} onChange={v => setField('heroBadgeText', v)} ph="✨ Nuevos diseños 2025" />
+        <HomeF label="Título principal gigante" value={form.heroTitle} onChange={v => setField('heroTitle', v)} multi />
+        <HomeF label="Subtítulo" value={form.heroSubtitle} onChange={v => setField('heroSubtitle', v)} multi />
         <div className="grid md:grid-cols-2 gap-4">
-          <F label="Botón Primario" value={form.heroButton1Text} onChange={v => setField('heroButton1Text', v)} />
-          <F label="Botón Secundario" value={form.heroButton2Text} onChange={v => setField('heroButton2Text', v)} />
+          <HomeF label="Botón Primario" value={form.heroButton1Text} onChange={v => setField('heroButton1Text', v)} />
+          <HomeF label="Botón Secundario" value={form.heroButton2Text} onChange={v => setField('heroButton2Text', v)} />
         </div>
-        <F label="URL imagen de fondo" value={form.heroImage} onChange={v => setField('heroImage', v)} ph="https://..." />
+        <HomeF label="URL imagen de fondo" value={form.heroImage} onChange={v => setField('heroImage', v)} ph="https://..." />
         {form.heroImage && <img src={form.heroImage} className="mt-1 h-32 w-full object-cover rounded-lg opacity-75" alt="preview" />}
-      </Sec>
+      </HomeSec>
 
       {/* PROMOS Y NOTICIAS (TICKER SUPERIOR) */}
-      <Sec title="📢 Marquesina Animada (Anuncios Rápidos)">
+      <HomeSec title="📢 Marquesina Animada (Anuncios Rápidos)">
         <p className="text-sm text-muted-foreground mb-4">Aparecen en la banda que se mueve sola debajo de "Recién llegados". Usa emojis para que destaquen.</p>
         <div className="space-y-4">
           {form.promos.map((promo, idx) => (
@@ -461,23 +465,23 @@ function HomeTab() {
           ))}
         </div>
         <Button variant="outline" size="sm" onClick={addPromoItem} className="mt-4 gap-2 whitespace-nowrap"><Plus className="h-4 w-4" /> Nuevo Anuncio</Button>
-      </Sec>
+      </HomeSec>
 
-      <Sec title="🏷️ Títulos de las Secciones">
+      <HomeSec title="🏷️ Títulos de las Secciones">
         <div className="grid md:grid-cols-2 gap-4">
-          <F label="Rótulo Favoritos (Ej: Los Favoritos)" value={form.favoritesTitle} onChange={v => setField('favoritesTitle', v)} />
-          <F label="Título Más Vendidos" value={form.bestSellersTitle} onChange={v => setField('bestSellersTitle', v)} />
-          <F label="Rótulo Novedades" value={form.newArrivalsTitle} onChange={v => setField('newArrivalsTitle', v)} />
-          <F label="Título Sección Novedades" value={form.designsTitle} onChange={v => setField('designsTitle', v)} />
+          <HomeF label="Rótulo Favoritos (Ej: Los Favoritos)" value={form.favoritesTitle} onChange={v => setField('favoritesTitle', v)} />
+          <HomeF label="Título Más Vendidos" value={form.bestSellersTitle} onChange={v => setField('bestSellersTitle', v)} />
+          <HomeF label="Rótulo Novedades" value={form.newArrivalsTitle} onChange={v => setField('newArrivalsTitle', v)} />
+          <HomeF label="Título Sección Novedades" value={form.designsTitle} onChange={v => setField('designsTitle', v)} />
         </div>
         <p className="text-sm text-muted-foreground mt-2 border-t pt-2">Nota: Los productos "Más vendidos" y "Novedades" se eligen en la pestaña <strong>Productos</strong>, activando las opciones "Destacado" o "Más Vendido".</p>
-      </Sec>
+      </HomeSec>
 
-      <Sec title="📖 Sección Historia en Inicio (Fondo Oscuro Inferior)">
-        <F label="Título de la sección" value={form.aboutSectionTitle} onChange={v => setField('aboutSectionTitle', v)} />
-        <F label="Párrafo sobre la empresa" value={form.aboutSectionText} onChange={v => setField('aboutSectionText', v)} multi />
-        <F label="Texto del botón (Va a /nosotros)" value={form.aboutSectionButtonText} onChange={v => setField('aboutSectionButtonText', v)} />
-      </Sec>
+      <HomeSec title="📖 Sección Historia en Inicio (Fondo Oscuro Inferior)">
+        <HomeF label="Título de la sección" value={form.aboutSectionTitle} onChange={v => setField('aboutSectionTitle', v)} />
+        <HomeF label="Párrafo sobre la empresa" value={form.aboutSectionText} onChange={v => setField('aboutSectionText', v)} multi />
+        <HomeF label="Texto del botón (Va a /nosotros)" value={form.aboutSectionButtonText} onChange={v => setField('aboutSectionButtonText', v)} />
+      </HomeSec>
 
     </motion.div>
   );
@@ -491,6 +495,8 @@ function ProductsTab() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  // URLs de imágenes gestionadas por ImageUploader
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -502,7 +508,10 @@ function ProductsTab() {
     shortDescription: '',
     description: '',
     technicalDetails: '',
-    images: '',
+    dimWidth: '',
+    dimHeight: '',
+    dimDepth: '',
+    materials: '',
   });
 
   const filteredProducts = products.filter(p =>
@@ -510,7 +519,8 @@ function ProductsTab() {
   );
 
   const resetForm = () => {
-    setFormData({ name: '', price: '', originalPrice: '', discount: '', stock: '', category: '', shortDescription: '', description: '', technicalDetails: '', images: '' });
+    setFormData({ name: '', price: '', originalPrice: '', discount: '', stock: '', category: '', shortDescription: '', description: '', technicalDetails: '', dimWidth: '', dimHeight: '', dimDepth: '', materials: '' });
+    setUploadedImages([]);
     setEditingProduct(null);
   };
 
@@ -521,6 +531,7 @@ function ProductsTab() {
 
   const openEditDialog = (product: Product) => {
     setEditingProduct(product);
+    setUploadedImages(product.images ?? []);
     setFormData({
       name: product.name,
       price: product.price.toString(),
@@ -531,12 +542,19 @@ function ProductsTab() {
       shortDescription: product.shortDescription,
       description: product.description,
       technicalDetails: product.technicalDetails || '',
-      images: product.images.join(', '),
+      dimWidth: product.dimensions?.width?.toString() || '',
+      dimHeight: product.dimensions?.height?.toString() || '',
+      dimDepth: product.dimensions?.depth?.toString() || '',
+      materials: product.materials?.join(', ') || '',
     });
     setIsDialogOpen(true);
   };
 
   const handleSubmit = () => {
+    if (!formData.name || !formData.category || !formData.price) {
+      toast.error('Completa los campos obligatorios: nombre, categoría y precio.');
+      return;
+    }
     const productData: Product = {
       id: editingProduct?.id || Date.now().toString(),
       name: formData.name,
@@ -551,9 +569,13 @@ function ProductsTab() {
       technicalDetails: formData.technicalDetails,
       shippingInfo: editingProduct?.shippingInfo,
       returnsInfo: editingProduct?.returnsInfo,
-      images: formData.images.split(',').map(url => url.trim()).filter(Boolean),
-      dimensions: editingProduct?.dimensions || { width: 0, height: 0, depth: 0 },
-      materials: editingProduct?.materials || [],
+      images: uploadedImages,
+      dimensions: {
+        width: parseInt(formData.dimWidth) || 0,
+        height: parseInt(formData.dimHeight) || 0,
+        depth: parseInt(formData.dimDepth) || 0,
+      },
+      materials: formData.materials ? formData.materials.split(',').map(m => m.trim()).filter(Boolean) : [],
       rating: editingProduct?.rating || 4.5,
       reviewCount: editingProduct?.reviewCount || 0,
       createdAt: editingProduct?.createdAt || new Date().toISOString().split('T')[0],
@@ -700,14 +722,38 @@ function ProductsTab() {
               <Textarea rows={4} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label>URLs de Imágenes (separadas por coma)</Label>
-              <Textarea rows={2} value={formData.images} onChange={(e) => setFormData({ ...formData, images: e.target.value })} placeholder="https://imagen1.jpg, https://imagen2.jpg" />
+              <Label className="flex items-center gap-2">
+                Imágenes del Producto
+                <span className="text-xs font-normal text-muted-foreground">(JPG, PNG, WEBP · máx. 5 MB c/u)</span>
+              </Label>
+              <ImageUploader
+                key={editingProduct?.id ?? 'new'}
+                initialUrls={uploadedImages}
+                onChange={setUploadedImages}
+              />
             </div>
 
             <div className="grid grid-cols-1 gap-4">
-              <div className="space-y-2">
-                <Label>Detalles Técnicos</Label>
-                <Textarea rows={4} value={formData.technicalDetails} onChange={(e) => setFormData({ ...formData, technicalDetails: e.target.value })} placeholder="Especificaciones técnicas del producto..." />
+              <div className="p-4 rounded-xl border border-border bg-card/50 space-y-4">
+                <h4 className="font-semibold text-sm">Detalles Técnicos</h4>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>Ancho (cm)</Label>
+                    <Input type="number" value={formData.dimWidth} onChange={(e) => setFormData({ ...formData, dimWidth: e.target.value })} placeholder="Ej: 150" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Alto (cm)</Label>
+                    <Input type="number" value={formData.dimHeight} onChange={(e) => setFormData({ ...formData, dimHeight: e.target.value })} placeholder="Ej: 80" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Profund. (cm)</Label>
+                    <Input type="number" value={formData.dimDepth} onChange={(e) => setFormData({ ...formData, dimDepth: e.target.value })} placeholder="Ej: 50" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Materiales (separados por comas)</Label>
+                  <Input value={formData.materials} onChange={(e) => setFormData({ ...formData, materials: e.target.value })} placeholder="Ej: Madera de roble, Tela lino" />
+                </div>
               </div>
               <div className="p-3 bg-muted/50 rounded-lg border border-border text-sm text-muted-foreground">
                 ℹ️ Las políticas de <strong>envío y devoluciones</strong> se aplican a todos los productos por igual.

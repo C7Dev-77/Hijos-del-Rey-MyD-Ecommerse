@@ -29,7 +29,6 @@ export interface StoreSettings {
   shippingPolicy: string;
   returnPolicy: string;
   privacyPolicy: string;
-  wompiPublicKey: string;
   whatsappMessage: string;
   checkoutMessage: string;
 }
@@ -203,7 +202,6 @@ const defaultStoreSettings: StoreSettings = {
   shippingPolicy: 'Envíos a nivel nacional en Colombia con tiempos de entrega de 5 a 10 días hábiles.',
   returnPolicy: 'Se aceptan devoluciones dentro de los 15 días posteriores a la entrega.',
   privacyPolicy: 'Tus datos están seguros con nosotros.',
-  wompiPublicKey: 'pub_test_X0z...',
   whatsappMessage: 'Hola, tengo una consulta desde la tienda virtual.',
   checkoutMessage: 'Procesaremos tu pedido vía WhatsApp para confirmar disponibilidad y envío.',
 };
@@ -227,7 +225,7 @@ const defaultAboutPageContent: AboutPageContent = {
     { year: '2000', title: 'Expansión', description: 'Abrimos nuestra primera sala de exhibición y formamos un equipo de 15 artesanos especializados.' },
     { year: '2010', title: 'Reconocimiento', description: 'Recibimos el Premio Nacional de Artesanía por nuestra contribución a preservar técnicas tradicionales.' },
     { year: '2020', title: 'Transformación Digital', description: 'Lanzamos nuestra plataforma digital sin perder la esencia artesanal que nos caracteriza.' },
-    { year: 'Hoy', title: 'Líderes en Artesanía', description: 'Más de 30 años creando piezas únicas para miles de hogares colombianos.' },
+    { year: 'Hoy', title: 'Líderes en Artesanía', description: 'Más de 10 años creando piezas únicas para miles de hogares colombianos.' },
   ],
   valuesTitle: 'Nuestros Valores',
   values: [
@@ -354,7 +352,6 @@ function mapSettingsFromDB(row: Record<string, unknown>) {
       shippingPolicy: row.shipping_policy as string,
       returnPolicy: row.return_policy as string,
       privacyPolicy: row.privacy_policy as string,
-      wompiPublicKey: (row.wompi_public_key as string) || defaultStoreSettings.wompiPublicKey,
       whatsappMessage: (row.whatsapp_message as string) || defaultStoreSettings.whatsappMessage,
       checkoutMessage: (row.checkout_message as string) || defaultStoreSettings.checkoutMessage,
     },
@@ -678,7 +675,6 @@ export const useAdminStore = create<AdminState>()(
           shipping_policy: updated.shippingPolicy,
           return_policy: updated.returnPolicy,
           privacy_policy: updated.privacyPolicy,
-          wompi_public_key: updated.wompiPublicKey,
           whatsapp_message: updated.whatsappMessage,
           checkout_message: updated.checkoutMessage,
         }).eq('id', 1);

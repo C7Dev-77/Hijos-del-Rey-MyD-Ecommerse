@@ -32,7 +32,7 @@ export function Footer() {
               <img loading="lazy" width={200} height={48} src="/logo.png" alt="M&D Hijos del Rey" className="h-12 w-auto" />
             </Link>
             <p className="text-cream/90 text-sm leading-relaxed">
-              Muebles artesanales colombianos de alta calidad. Cada pieza cuenta
+              Muebles artesanales de Sampués de alta calidad. Cada pieza cuenta
               una historia de tradición y calidad hecha en Sampués, Sucre.
             </p>
             <div className="flex space-x-4">

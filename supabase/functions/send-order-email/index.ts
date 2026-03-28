@@ -60,7 +60,7 @@ function buildCustomerEmail(order: Record<string, unknown>, isNew: boolean): str
     <!-- Header -->
     <div style="background:linear-gradient(135deg, #5C3D2E 0%, #8B5E3C 100%); padding:40px 32px; text-align:center;">
       <h1 style="color:#F5E6D3; font-size:28px; margin:0; letter-spacing:1px;">M&D Hijos del Rey</h1>
-      <p style="color:#D4A57A; margin:8px 0 0; font-size:14px;">Muebles Artesanales Colombianos</p>
+      <p style="color:#D4A57A; margin:8px 0 0; font-size:14px;">Muebles Artesanales Sampués</p>
     </div>
 
     <!-- Body -->
