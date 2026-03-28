@@ -39,7 +39,7 @@ import { usePageSEO } from '@/hooks/useSEO';
 
 export default function ProductoPage() {
   const { slug } = useParams();
-  const { products } = useAdminStore();
+  const { products, storeSettings } = useAdminStore();
   const product = products.find(p => p.slug === (slug || ''));
   const { addItem } = useCartStore();
   const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlistStore();
@@ -355,11 +355,11 @@ export default function ProductoPage() {
                 </div>
                 <div className="text-center">
                   <Shield className="h-6 w-6 mx-auto text-primary mb-2" />
-                  <span className="text-xs text-muted-foreground">Garantía 5 Años</span>
+                  <span className="text-xs text-muted-foreground">Garantía 2 Años</span>
                 </div>
                 <div className="text-center">
                   <RotateCcw className="h-6 w-6 mx-auto text-primary mb-2" />
-                  <span className="text-xs text-muted-foreground">30 Días Devolución</span>
+                  <span className="text-xs text-muted-foreground">7 Días Devolución</span>
                 </div>
               </div>
 
@@ -406,14 +406,18 @@ export default function ProductoPage() {
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="space-y-4 text-muted-foreground">
-                      <p>
-                        <strong className="text-foreground">Envío Nacional:</strong> Entrega en 5-10 días hábiles.
-                        Envío gratuito en pedidos superiores a $1.000.000.
-                      </p>
-                      <p>
-                        <strong className="text-foreground">Devoluciones:</strong> Aceptamos devoluciones dentro
-                        de los 30 días siguientes a la entrega. El producto debe estar en su estado original.
-                      </p>
+                      {storeSettings.shippingPolicy && (
+                        <p>
+                          <strong className="text-foreground">Envío Nacional:</strong>{' '}
+                          {storeSettings.shippingPolicy}
+                        </p>
+                      )}
+                      {storeSettings.returnPolicy && (
+                        <p>
+                          <strong className="text-foreground">Devoluciones:</strong>{' '}
+                          {storeSettings.returnPolicy}
+                        </p>
+                      )}
                     </div>
                   </AccordionContent>
                 </AccordionItem>

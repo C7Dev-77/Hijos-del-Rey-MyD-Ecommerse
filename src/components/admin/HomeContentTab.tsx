@@ -308,8 +308,8 @@ export default function HomeContentTab() {
                             </div>
                             <div className="space-y-5">
                                 {[
-                                    { label: 'Política de Envíos', key: 'shippingPolicy', placeholder: 'Envíos a nivel nacional en Colombia...' },
-                                    { label: 'Política de Devoluciones', key: 'returnPolicy', placeholder: 'Se aceptan devoluciones dentro de...' },
+                                    { label: 'Política de Envíos (aparece en la página de producto)', key: 'shippingPolicy', placeholder: 'Ej: Entrega en 5-10 días hábiles. Envío gratuito en pedidos superiores a $1.000.000.' },
+                                    { label: 'Política de Devoluciones (aparece en la página de producto)', key: 'returnPolicy', placeholder: 'Ej: Aceptamos devoluciones dentro de los 7 días siguientes a la entrega...' },
                                     { label: 'Política de Privacidad', key: 'privacyPolicy', placeholder: 'Tus datos están seguros con nosotros...' },
                                 ].map(({ label, key, placeholder }) => (
                                     <div key={key} className="space-y-2">
