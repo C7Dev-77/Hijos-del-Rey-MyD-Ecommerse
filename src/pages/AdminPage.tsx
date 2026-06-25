@@ -45,8 +45,9 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import HomeContentTab from '@/components/admin/HomeContentTab';
 import ImageUploader from '@/components/admin/ImageUploader';
+import { BillingTab } from '@/components/admin/billing/BillingTab';
 
-type AdminTab = 'dashboard' | 'products' | 'orders' | 'blog' | 'quotes' | 'home' | 'config' | 'nosotros';
+type AdminTab = 'dashboard' | 'products' | 'orders' | 'blog' | 'quotes' | 'home' | 'config' | 'nosotros' | 'billing';
 
 export default function AdminPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -68,6 +69,7 @@ export default function AdminPage() {
 
   const navItems = [
     { id: 'dashboard' as AdminTab, label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'billing' as AdminTab, label: 'Facturación', icon: FileText },
     { id: 'products' as AdminTab, label: 'Productos', icon: Package },
     { id: 'orders' as AdminTab, label: 'Pedidos', icon: ShoppingCart },
     { id: 'quotes' as AdminTab, label: 'Cotizaciones', icon: ClipboardList },
@@ -147,6 +149,7 @@ export default function AdminPage() {
             <h1 className="font-display text-2xl font-bold">
               {{
                 dashboard: 'Dashboard',
+                billing: 'Facturación Electrónica',
                 products: 'Productos',
                 orders: 'Pedidos',
                 quotes: 'Cotizaciones',
@@ -165,6 +168,7 @@ export default function AdminPage() {
 
         <AnimatePresence mode="wait">
           {activeTab === 'dashboard' && <DashboardTab key="dashboard" />}
+          {activeTab === 'billing' && <BillingTab key="billing" />}
           {activeTab === 'products' && <ProductsTab key="products" />}
           {activeTab === 'orders' && <OrdersTab key="orders" />}
           {activeTab === 'quotes' && <QuotesTab key="quotes" />}
@@ -209,36 +213,11 @@ function DashboardTab() {
   const ventasMes = salesData[salesData.length - 1]?.ventas ?? 0;
 
   // ── Top Productos contados desde los items reales de las órdenes ──
-  // Los pedidos pueden tener dos formatos: {product:{id,name},quantity} o {productId,quantity,price}
-  const productCount: Record<string, { name: string; ventas: number }> = {};
-  for (const order of orders) {
-    if (!Array.isArray(order.products)) continue;
-    for (const rawItem of order.products as unknown[]) {
-      const item = rawItem as Record<string, unknown>;
-      // Formato del carrito: { product: { id, name }, quantity }
-      if (item.product && typeof item.product === 'object') {
-        const p = item.product as { id?: string; name?: string };
-        const id = p.id;
-        if (!id) continue;
-        if (!productCount[id]) productCount[id] = { name: (p.name || 'Producto').slice(0, 22), ventas: 0 };
-        productCount[id].ventas += (item.quantity as number) ?? 1;
-        continue;
-      }
-      // Formato alternativo: { productId, quantity }
-      const id = item.productId as string;
-      if (!id) continue;
-      if (!productCount[id]) productCount[id] = { name: id.slice(0, 22), ventas: 0 };
-      productCount[id].ventas += (item.quantity as number) ?? 1;
-    }
-  }
-  const topProducts = Object.values(productCount)
-    .sort((a, b) => b.ventas - a.ventas)
-    .slice(0, 5);
-
-  // Si no hay datos reales de pedidos, mostramos los productos del catálogo con 0
-  const chartProducts = topProducts.length > 0
-    ? topProducts
-    : products.slice(0, 5).map(p => ({ name: p.name.slice(0, 22), ventas: 0 }));
+  // ── Top Productos basados en el contador de ventas ──
+  const chartProducts = [...products]
+    .sort((a, b) => (b.salesCount || 0) - (a.salesCount || 0))
+    .slice(0, 5)
+    .map(p => ({ name: p.name.slice(0, 22), ventas: p.salesCount || 0 }));
 
   // ── KPIs ─────────────────────────────────────────────────────────
   const pendingOrders = orders.filter(o => o.status === 'pending').length;
@@ -512,6 +491,7 @@ function ProductsTab() {
     dimHeight: '',
     dimDepth: '',
     materials: '',
+    salesCount: '',
   });
 
   const filteredProducts = products.filter(p =>
@@ -519,7 +499,7 @@ function ProductsTab() {
   );
 
   const resetForm = () => {
-    setFormData({ name: '', price: '', originalPrice: '', discount: '', stock: '', category: '', shortDescription: '', description: '', technicalDetails: '', dimWidth: '', dimHeight: '', dimDepth: '', materials: '' });
+    setFormData({ name: '', price: '', originalPrice: '', discount: '', stock: '', category: '', shortDescription: '', description: '', technicalDetails: '', dimWidth: '', dimHeight: '', dimDepth: '', materials: '', salesCount: '' });
     setUploadedImages([]);
     setEditingProduct(null);
   };
@@ -546,6 +526,7 @@ function ProductsTab() {
       dimHeight: product.dimensions?.height?.toString() || '',
       dimDepth: product.dimensions?.depth?.toString() || '',
       materials: product.materials?.join(', ') || '',
+      salesCount: product.salesCount?.toString() || '0',
     });
     setIsDialogOpen(true);
   };
@@ -578,6 +559,7 @@ function ProductsTab() {
       materials: formData.materials ? formData.materials.split(',').map(m => m.trim()).filter(Boolean) : [],
       rating: editingProduct?.rating || 4.5,
       reviewCount: editingProduct?.reviewCount || 0,
+      salesCount: parseInt(formData.salesCount) || 0,
       createdAt: editingProduct?.createdAt || new Date().toISOString().split('T')[0],
     };
 
@@ -630,6 +612,7 @@ function ProductsTab() {
                 <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Categoría</th>
                 <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Precio</th>
                 <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Stock</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Ventas</th>
                 <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Acciones</th>
               </tr>
             </thead>
@@ -653,6 +636,9 @@ function ProductsTab() {
                     <Badge className={product.stock > 5 ? 'badge-delivered' : product.stock > 0 ? 'badge-pending' : 'badge-cancelled'}>
                       {product.stock} und
                     </Badge>
+                  </td>
+                  <td className="py-3 px-4 font-medium">
+                    {product.salesCount || 0}
                   </td>
                   <td className="py-3 px-4 text-right">
                     <div className="flex justify-end gap-2">
@@ -703,6 +689,10 @@ function ProductsTab() {
               <div className="space-y-2">
                 <Label>Stock (unidades)</Label>
                 <Input type="number" value={formData.stock} onChange={(e) => setFormData({ ...formData, stock: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Ventas (contador)</Label>
+                <Input type="number" value={formData.salesCount} onChange={(e) => setFormData({ ...formData, salesCount: e.target.value })} placeholder="Ej: 15" />
               </div>
               <div className="space-y-2">
                 <Label>Precio Original (opcional, si hay descuento)</Label>

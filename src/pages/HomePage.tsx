@@ -200,7 +200,8 @@ function CategoriesSection() {
 // Featured Products Carousel
 function FeaturedSection() {
   const { products, homePageContent } = useAdminStore();
-  const bestSellers = products.filter(p => p.bestSeller).slice(0, 4);
+  // Ordenar automáticamente por el contador de ventas
+  const bestSellers = [...products].sort((a, b) => (b.salesCount || 0) - (a.salesCount || 0)).slice(0, 4);
 
   return (
     <section className="py-24 bg-background">
@@ -248,7 +249,7 @@ function BenefitsSection() {
     },
     {
       icon: Shield,
-      title: 'Garantía 5 Años',
+      title: 'Garantía 2 Años',
       description: 'Respaldamos la calidad de cada pieza con garantía extendida.',
     },
     {
@@ -300,7 +301,8 @@ function BenefitsSection() {
 // New Arrivals Section
 function NewArrivalsSection() {
   const { products, homePageContent } = useAdminStore();
-  const featured = products.filter(p => p.featured).slice(0, 2);
+  // Ordenar automáticamente por fecha de creación para tomar los 2 más nuevos
+  const featured = [...products].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 2);
 
   return (
     <section className="py-24 bg-cream-dark">

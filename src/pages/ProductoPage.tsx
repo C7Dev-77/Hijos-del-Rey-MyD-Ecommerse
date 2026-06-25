@@ -402,7 +402,7 @@ export default function ProductoPage() {
 
                 <AccordionItem value="shipping">
                   <AccordionTrigger className="font-display font-semibold">
-                    Envíos y Devoluciones
+                    Envíos, Garantía y Devoluciones
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="space-y-4 text-muted-foreground">
@@ -412,12 +412,14 @@ export default function ProductoPage() {
                           {storeSettings.shippingPolicy}
                         </p>
                       )}
-                      {storeSettings.returnPolicy && (
-                        <p>
-                          <strong className="text-foreground">Devoluciones:</strong>{' '}
-                          {storeSettings.returnPolicy}
-                        </p>
-                      )}
+                      <p>
+                        <strong className="text-foreground">Garantía:</strong>{' '}
+                        Ofrecemos garantía de 2 años por defectos de fabricación.
+                      </p>
+                      <p>
+                        <strong className="text-foreground">Devoluciones:</strong>{' '}
+                        Aceptamos devoluciones dentro de los 7 días siguientes a la entrega.
+                      </p>
                     </div>
                   </AccordionContent>
                 </AccordionItem>

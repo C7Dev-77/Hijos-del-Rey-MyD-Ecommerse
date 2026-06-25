@@ -34,7 +34,7 @@ const contactSchema = z.object({
 type ContactFormData = z.infer<typeof contactSchema>;
 
 export default function ContactoPage() {
-  const { contactInfo } = useAdminStore();
+  const { contactInfo, addQuote } = useAdminStore();
 
   usePageSEO({
     title: 'Contacto — Escríbenos o Visítanos en Sampués, Sucre',
@@ -53,6 +53,20 @@ export default function ContactoPage() {
 
   const onSubmit = async (data: ContactFormData) => {
     try {
+      // Guardar en Dashboard de Cotizaciones automáticamente
+      addQuote({
+        id: Date.now().toString(),
+        userName: data.name,
+        userEmail: data.email,
+        userPhone: data.phone || 'No especificado',
+        userCity: 'Desde Contacto',
+        furnitureType: data.subject,
+        description: data.message,
+        images: [],
+        status: 'pending',
+        createdAt: new Date().toISOString()
+      });
+
       // Guardar mensaje en Supabase
       const { error } = await supabase.from('contact_messages').insert([{
         name: data.name,

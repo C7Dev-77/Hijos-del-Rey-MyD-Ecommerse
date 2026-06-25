@@ -183,7 +183,7 @@ const defaultHomePageContent: HomePageContent = {
   aboutSectionText: 'Nuestro compromiso es crear piezas únicas que transformen tus espacios. Cada mueble está fabricado con maderas de origen sostenible y mentes creativas.',
   aboutSectionButtonText: 'Conoce Nuestra Historia',
   promos: [
-    { icon: '🛡️', text: 'Garantía Extendida: Todos nuestros diseños incluyen una Garantía de 5 años contra defectos de fabricación.' },
+    { icon: '🛡️', text: 'Garantía Extendida: Todos nuestros diseños incluyen una Garantía de 2 años contra defectos de fabricación.' },
     { icon: '💳', text: 'Paga a tu Ritmo: Financia tu compra hasta en 12 cuotas sin intereses con Bancolombia.' },
     { icon: '📐', text: 'Diseño a Medida: Servicio de personalización de muebles. ¡Creamos tu visión!' },
     { icon: '🥇', text: 'Más de 2,500 Clientes Felices en toda Colombia.' },
@@ -271,6 +271,7 @@ function mapProductFromDB(row: Record<string, unknown>): Product {
     returnsInfo: row.returns_info as string | undefined,
     rating: (row.rating as number) || 4.5,
     reviewCount: (row.review_count as number) || 0,
+    salesCount: (row.sales_count as number) || 0,
     createdAt: row.created_at as string,
   };
 }
@@ -301,6 +302,7 @@ function mapProductToDB(product: Product): Record<string, unknown> {
     returns_info: product.returnsInfo || null,
     rating: product.rating,
     review_count: product.reviewCount,
+    sales_count: product.salesCount || 0,
   };
 }
 
