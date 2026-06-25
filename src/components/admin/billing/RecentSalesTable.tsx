@@ -3,7 +3,7 @@ import { Eye, FileText, Mail, MessageCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useInvoices, type Invoice } from "@/hooks/useInvoices";
 import { formatCurrencyCOP, downloadInvoicePDF } from "@/lib/billing-utils";
-import { useBillingSettings } from "@/hooks/useBillingSettings";
+import { useBillingSettings, type BillingCompanySettings } from "@/hooks/useBillingSettings";
 import { toast } from "sonner";
 
 function formatDate(dateString: string) {
@@ -14,7 +14,7 @@ function formatDate(dateString: string) {
   });
 }
 
-function ActionButton({ invoice, settings }: { invoice: Invoice, settings: any }) {
+function ActionButton({ invoice, settings }: { invoice: Invoice, settings: BillingCompanySettings | null }) {
   const handleDownload = () => {
     const pdfData = {
       number: invoice.number,

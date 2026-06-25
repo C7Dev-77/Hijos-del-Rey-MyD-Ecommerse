@@ -238,9 +238,10 @@ export function AIInvoiceAssistant({ open, onOpenChange }: AIInvoiceAssistantPro
 
             setMessages((prev) => [...prev, assistantMsg]);
             setConversationHistory([...newHistory, { role: "model", content: assistantContent }]);
-        } catch (err: any) {
-            console.error("Error:", err);
-            setMessages((prev) => [...prev, { role: "assistant", content: "❌ Error al comunicarse con la IA. " + (err.message || ""), isError: true }]);
+        } catch (err: unknown) {
+            const errorObj = err instanceof Error ? err : new Error(String(err));
+            console.error("Error:", errorObj);
+            setMessages((prev) => [...prev, { role: "assistant", content: "❌ Error al comunicarse con la IA. " + (errorObj.message || ""), isError: true }]);
         } finally {
             setIsTyping(false);
         }
@@ -288,8 +289,9 @@ export function AIInvoiceAssistant({ open, onOpenChange }: AIInvoiceAssistantPro
             setMessages((prev) => [...prev, successMsg]);
             setPendingInvoice(null);
             toast.success("Factura creada");
-        } catch (err: any) {
-            toast.error("Error al crear la factura", { description: err.message });
+        } catch (err: unknown) {
+            const errorObj = err instanceof Error ? err : new Error(String(err));
+            toast.error("Error al crear la factura", { description: errorObj.message });
         } finally {
             setCreating(false);
         }

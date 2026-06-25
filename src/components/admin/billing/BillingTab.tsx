@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LayoutDashboard, 
@@ -29,9 +29,9 @@ import { EditInvoiceDialog } from './EditInvoiceDialog';
 import { NewClientDialog, type ClientFormData } from './NewClientDialog';
 import { NewProductDialog, type ProductFormData } from './NewProductDialog';
 import { AIInvoiceAssistant } from './AIInvoiceAssistant';
-import { useInvoices, type Invoice } from '@/hooks/useInvoices';
-import { useBillingClients } from '@/hooks/useBillingClients';
-import { useBillingProducts } from '@/hooks/useBillingProducts';
+import { useInvoices, type Invoice, type InvoiceInput } from '@/hooks/useInvoices';
+import { useBillingClients, type BillingClient } from '@/hooks/useBillingClients';
+import { useBillingProducts, type BillingProduct } from '@/hooks/useBillingProducts';
 import { useBillingSettings } from '@/hooks/useBillingSettings';
 import { exportToCSV, formatCurrencyCOP, formatDateCO, downloadInvoicePDF } from '@/lib/billing-utils';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -158,8 +158,8 @@ function BillingInvoices() {
   const filteredInvoices = invoices.filter(inv => {
     const matchesSearch = 
       inv.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inv.client?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inv.client?.nit.includes(searchTerm);
+      (inv.client?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (inv.client?.nit || '').includes(searchTerm);
     const matchesStatus = statusFilter === 'all' || inv.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -355,9 +355,10 @@ function BillingInvoices() {
           open={!!editingInvoice}
           onOpenChange={(open) => !open && setEditingInvoice(null)}
           invoice={editingInvoice}
-          onSave={async (data) => {
-            const res = await updateInvoice(editingInvoice.id, data);
+          onSave={async (id: string, data: InvoiceInput) => {
+            const res = await updateInvoice(id, data);
             if (!res.error) setEditingInvoice(null);
+            return res;
           }}
         />
       )}
@@ -371,12 +372,12 @@ function BillingClients() {
   const { invoices } = useInvoices();
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingClient, setEditingClient] = useState<any | null>(null);
+  const [editingClient, setEditingClient] = useState<BillingClient | null>(null);
 
   const filteredClients = clients.filter(c => 
-    c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.nit.includes(searchTerm) ||
-    c.email.toLowerCase().includes(searchTerm.toLowerCase())
+    (c.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (c.nit || '').includes(searchTerm) ||
+    (c.email || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const clientStats = useMemo(() => {
@@ -523,11 +524,11 @@ function BillingProducts() {
   const { products, loading, createProduct, updateProduct, deleteProduct } = useBillingProducts();
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<any | null>(null);
+  const [editingProduct, setEditingProduct] = useState<BillingProduct | null>(null);
 
   const filteredProducts = products.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.code.toLowerCase().includes(searchTerm.toLowerCase())
+    (p.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (p.code || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getStatusConfig = (status: string, stock: number) => {
@@ -692,7 +693,7 @@ function BillingSettings() {
   const [saving, setSaving] = useState(false);
 
   // Cargar datos cuando cargue la base
-  useMemo(() => {
+  useEffect(() => {
     if (settings) {
       setFormData({
         company_name: settings.company_name || '',

@@ -14,15 +14,7 @@ import { toast } from "sonner";
 import { formatCurrencyCOP } from "@/lib/billing-utils";
 import { useBillingClients } from "@/hooks/useBillingClients";
 import { useBillingProducts } from "@/hooks/useBillingProducts";
-import { type Invoice } from "@/hooks/useInvoices";
-
-interface InvoiceItem {
-    product_id: string | null;
-    description: string;
-    quantity: number;
-    unit_price: number;
-    tax: number;
-}
+import { type Invoice, type InvoiceInput, type InvoiceItemInput as InvoiceItem } from "@/hooks/useInvoices";
 
 const emptyItem: InvoiceItem = {
     product_id: null,
@@ -36,13 +28,7 @@ interface EditInvoiceDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     invoice: Invoice | null;
-    onSave: (id: string, data: {
-        client_id: string;
-        date: string;
-        due_date: string;
-        notes?: string;
-        items: InvoiceItem[];
-    }) => Promise<{ error: any }>;
+    onSave: (id: string, data: InvoiceInput) => Promise<{ error: unknown }>;
 }
 
 const inputClass = cn(
