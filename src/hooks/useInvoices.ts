@@ -63,11 +63,11 @@ export function useInvoices() {
 
     const generateInvoiceNumber = async (): Promise<string> => {
         try {
-            // Fetch ALL invoice numbers to find the true maximum
+            // Fetch ALL invoice numbers (including deleted) to find the absolute maximum
+            // This prevents duplicate key errors when numbers were created in other apps
             const { data: allInvoices, error } = await supabase
                 .from('invoices')
-                .select('number')
-                .is('deleted_at', null);
+                .select('number');
 
             if (error) throw error;
 
