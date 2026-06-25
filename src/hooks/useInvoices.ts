@@ -63,43 +63,35 @@ export function useInvoices() {
 
     const generateInvoiceNumber = async (): Promise<string> => {
         try {
-            const { data, error } = await supabase.rpc('generate_invoice_number');
-            if (error) throw error;
-            if (data) return data as string;
-            throw new Error('No se recibió número de factura');
-        } catch (err) {
-            console.error('Error al generar número con RPC, usando fallback seguro:', err);
-            try {
-                // Fetch ALL invoice numbers to find the true maximum, not just the latest by date
-                const { data: allInvoices } = await supabase
-                    .from('invoices')
-                    .select('number')
-                    .is('deleted_at', null);
+            // Fetch ALL invoice numbers to find the true maximum
+            const { data: allInvoices, error } = await supabase
+                .from('invoices')
+                .select('number')
+                .is('deleted_at', null);
 
-                let maxNum = 0;
-                if (allInvoices && allInvoices.length > 0) {
-                    for (const inv of allInvoices) {
-                        const match = inv.number?.match(/-(\d+)$/);
-                        if (match) {
-                            const num = parseInt(match[1], 10);
-                            if (num > maxNum) maxNum = num;
-                        }
+            if (error) throw error;
+
+            let maxNum = 0;
+            if (allInvoices && allInvoices.length > 0) {
+                for (const inv of allInvoices) {
+                    const match = inv.number?.match(/-(\d+)$/);
+                    if (match) {
+                        const num = parseInt(match[1], 10);
+                        if (num > maxNum) maxNum = num;
                     }
                 }
-
-                if (maxNum > 0) {
-                    return `FE-${String(maxNum + 1).padStart(3, '0')}`;
-                }
-
-                // Last resort: use timestamp to guarantee uniqueness
-                const ts = Date.now().toString().slice(-5);
-                return `FE-${ts}`;
-            } catch (fallbackErr) {
-                console.error('Error en fallback de numeración:', fallbackErr);
-                // Absolute last resort using timestamp
-                const ts = Date.now().toString().slice(-5);
-                return `FE-${ts}`;
             }
+
+            if (maxNum > 0) {
+                return `FE-${String(maxNum + 1).padStart(3, '0')}`;
+            }
+
+            return 'FE-001';
+        } catch (err) {
+            console.error('Error al generar número de factura:', err);
+            // Absolute last resort using timestamp
+            const ts = Date.now().toString().slice(-5);
+            return `FE-${ts}`;
         }
     };
 
