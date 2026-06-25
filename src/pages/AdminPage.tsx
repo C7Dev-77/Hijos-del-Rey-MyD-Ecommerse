@@ -394,6 +394,10 @@ function HomeTab() {
   const { homePageContent: h, updateHomePageContent } = useAdminStore();
   const [form, setForm] = useState<HomePageContent>({ ...h });
 
+  useEffect(() => {
+    setForm(h);
+  }, [h]);
+
   const setField = <K extends keyof HomePageContent>(key: K, value: HomePageContent[K]) =>
     setForm(prev => ({ ...prev, [key]: value }));
 
@@ -1644,6 +1648,10 @@ const F = ({ label, value, onChange, multi = false, ph = '' }: { label: string; 
 function NosotrosTab() {
   const { aboutPageContent: a, updateAboutPageContent } = useAdminStore();
   const [form, setForm] = useState<AboutPageContent>({ ...a });
+
+  useEffect(() => {
+    setForm(a);
+  }, [a]);
 
   const setField = <K extends keyof AboutPageContent>(key: K, value: AboutPageContent[K]) =>
     setForm(prev => ({ ...prev, [key]: value }));
