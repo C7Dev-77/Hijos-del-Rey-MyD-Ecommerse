@@ -609,10 +609,12 @@ export const useAdminStore = create<AdminState>()(
 
         if (data) {
           const parsed = mapSettingsFromDB(data);
+          // Merge with existing local state so locally-saved fields not in Supabase are preserved
+          const currentState = get();
           set({
-            storeSettings: parsed.storeSettings,
-            homePageContent: parsed.homePageContent,
-            contactInfo: parsed.contactInfo,
+            storeSettings: { ...currentState.storeSettings, ...parsed.storeSettings },
+            homePageContent: { ...currentState.homePageContent, ...parsed.homePageContent },
+            contactInfo: { ...currentState.contactInfo, ...parsed.contactInfo },
           });
         }
         set({ isLoadingSettings: false });
@@ -638,7 +640,8 @@ export const useAdminStore = create<AdminState>()(
         set((state) => ({ homePageContent: { ...state.homePageContent, ...content } }));
         const updated = get().homePageContent;
 
-        const { error } = await supabase.from('app_settings').update({
+        // Try saving ALL fields (including newer columns)
+        const allFields: Record<string, unknown> = {
           hero_title: updated.heroTitle,
           hero_subtitle: updated.heroSubtitle,
           hero_image: updated.heroImage,
@@ -647,17 +650,33 @@ export const useAdminStore = create<AdminState>()(
           best_sellers_title: updated.bestSellersTitle,
           new_arrivals_title: updated.newArrivalsTitle,
           designs_title: updated.designsTitle,
-          // Intenta también actualizar las nuevas si existen (si la tabla se actualizó)
           hero_button1_text: updated.heroButton1Text,
           hero_button2_text: updated.heroButton2Text,
           about_section_title: updated.aboutSectionTitle,
           about_section_text: updated.aboutSectionText,
           about_section_button_text: updated.aboutSectionButtonText,
           promos: updated.promos,
-        }).eq('id', 1);
+        };
+
+        const { error } = await supabase.from('app_settings').update(allFields).eq('id', 1);
 
         if (error) {
-          console.warn('Algunas columnas nuevas podrían no estar en Supabase, error ignorado localmente:', error.message);
+          console.warn('Full update failed, retrying with core columns only:', error.message);
+          // Retry with only the core columns guaranteed to exist
+          const coreFields: Record<string, unknown> = {
+            hero_title: updated.heroTitle,
+            hero_subtitle: updated.heroSubtitle,
+            hero_image: updated.heroImage,
+            hero_badge_text: updated.heroBadgeText,
+            favorites_title: updated.favoritesTitle,
+            best_sellers_title: updated.bestSellersTitle,
+            new_arrivals_title: updated.newArrivalsTitle,
+            designs_title: updated.designsTitle,
+          };
+          const { error: coreError } = await supabase.from('app_settings').update(coreFields).eq('id', 1);
+          if (coreError) {
+            console.error('Core update also failed:', coreError.message);
+          }
         }
       },
 
