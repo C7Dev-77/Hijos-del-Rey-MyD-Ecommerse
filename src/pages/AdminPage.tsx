@@ -535,7 +535,7 @@ function ProductsTab() {
     setIsDialogOpen(true);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.name || !formData.category || !formData.price) {
       toast.error('Completa los campos obligatorios: nombre, categoría y precio.');
       return;
@@ -568,22 +568,39 @@ function ProductsTab() {
     };
 
     if (editingProduct) {
-      updateProduct(editingProduct.id, productData);
-      toast.success('Producto actualizado exitosamente');
+      try {
+        await updateProduct(editingProduct.id, productData);
+        toast.success('Producto actualizado exitosamente');
+        setIsDialogOpen(false);
+        resetForm();
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Error desconocido';
+        toast.error('Error al actualizar producto', { description: msg });
+      }
     } else {
-      addProduct(productData);
-      toast.success('Producto creado exitosamente');
+      try {
+        await addProduct(productData);
+        toast.success('Producto creado exitosamente');
+        setIsDialogOpen(false);
+        resetForm();
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Error desconocido';
+        toast.error('Error al crear producto', { description: msg });
+      }
     }
-
-    setIsDialogOpen(false);
-    resetForm();
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (deleteId) {
-      deleteProduct(deleteId);
-      toast.success('Producto eliminado');
-      setDeleteId(null);
+      try {
+        await deleteProduct(deleteId);
+        toast.success('Producto eliminado');
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Error desconocido';
+        toast.error('Error al eliminar producto', { description: msg });
+      } finally {
+        setDeleteId(null);
+      }
     }
   };
 

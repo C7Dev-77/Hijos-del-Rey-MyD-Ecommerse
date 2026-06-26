@@ -414,32 +414,30 @@ export const useAdminStore = create<AdminState>()(
           .order('created_at', { ascending: false });
 
         if (error) {
-          console.warn('Supabase no disponible, usando datos mock:', error.message);
+          console.warn('Error al obtener productos de Supabase:', error.message);
           set({ isLoadingProducts: false });
           return;
         }
 
-        if (data && data.length > 0) {
-          set({ products: data.map(mapProductFromDB), isLoadingProducts: false });
-        } else {
-          // Si la tabla está vacía, se quedan los datos mock
-          set({ isLoadingProducts: false });
-        }
+        // Siempre actualizar desde la BD (incluso si está vacía)
+        set({ products: (data || []).map(mapProductFromDB), isLoadingProducts: false });
       },
 
       addProduct: async (product) => {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('products')
-          .insert(mapProductToDB(product));
+          .insert(mapProductToDB(product))
+          .select()
+          .single();
 
         if (error) {
-          console.error('Error al crear producto:', error.message);
-          // Fallback: agregar solo localmente
-          set((state) => ({ products: [...state.products, product] }));
-          return;
+          console.error('Error al crear producto en Supabase:', error.message);
+          throw new Error('No se pudo guardar el producto: ' + error.message);
         }
 
+        // Refrescar desde la BD para obtener el id real y created_at
         await get().fetchProducts();
+        return data;
       },
 
       updateProduct: async (id, updatedProduct) => {
@@ -453,13 +451,12 @@ export const useAdminStore = create<AdminState>()(
           .eq('id', id);
 
         if (error) {
-          console.error('Error al actualizar producto:', error.message);
+          console.error('Error al actualizar producto en Supabase:', error.message);
+          throw new Error('No se pudo actualizar el producto: ' + error.message);
         }
 
-        // Actualizar localmente siempre (UX inmediata)
-        set((state) => ({
-          products: state.products.map((p) => (p.id === id ? merged : p)),
-        }));
+        // Refrescar desde la BD para garantizar sincronía
+        await get().fetchProducts();
       },
 
       deleteProduct: async (id) => {
@@ -469,12 +466,12 @@ export const useAdminStore = create<AdminState>()(
           .eq('id', id);
 
         if (error) {
-          console.error('Error al eliminar producto:', error.message);
+          console.error('Error al eliminar producto en Supabase:', error.message);
+          throw new Error('No se pudo eliminar el producto: ' + error.message);
         }
 
-        set((state) => ({
-          products: state.products.filter((p) => p.id !== id),
-        }));
+        // Refrescar desde la BD
+        await get().fetchProducts();
       },
 
       // ─── Blog ──────────────────────────────────────────────────
