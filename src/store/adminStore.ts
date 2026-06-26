@@ -271,7 +271,7 @@ function mapProductFromDB(row: Record<string, unknown>): Product {
     returnsInfo: row.returns_info as string | undefined,
     rating: (row.rating as number) || 4.5,
     reviewCount: (row.review_count as number) || 0,
-    salesCount: (row.sales_count as number) || 0,
+    salesCount: 0, // sales_count column not in DB, default to 0
     createdAt: row.created_at as string,
   };
 }
@@ -302,7 +302,7 @@ function mapProductToDB(product: Product): Record<string, unknown> {
     returns_info: product.returnsInfo || null,
     rating: product.rating,
     review_count: product.reviewCount,
-    sales_count: product.salesCount || 0,
+    // sales_count omitted: column does not exist in Supabase products table
   };
 }
 
