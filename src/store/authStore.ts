@@ -12,6 +12,7 @@ interface AuthState {
   // Acciones
   initialize: () => Promise<void>;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  loginWithGoogle: () => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
 }
@@ -85,6 +86,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       isAdmin,
     });
 
+    return { success: true };
+  },
+
+  loginWithGoogle: async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/`,
+      },
+    });
+
+    if (error) {
+      return { success: false, error: 'No se pudo iniciar sesión con Google. Intenta de nuevo.' };
+    }
+
+    // El redirect es manejado automáticamente por Supabase/Google OAuth
     return { success: true };
   },
 

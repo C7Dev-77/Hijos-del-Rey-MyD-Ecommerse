@@ -433,10 +433,10 @@ export default function HomePage() {
       <main>
         <HeroSection />
         <CategoriesSection />
+        <PromoMarquee />
         <FeaturedSection />
         <BenefitsSection />
         <NewArrivalsSection />
-        <PromoMarquee />
         <CTASection />
       </main>
 

@@ -67,10 +67,22 @@ export default function CheckoutPage() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutSchema),
   });
+
+  useEffect(() => {
+    if (user) {
+      const fullName = user.user_metadata?.name || user.user_metadata?.full_name || '';
+      const parts = fullName.trim().split(' ');
+      
+      setValue('firstName', parts[0] || '');
+      setValue('lastName', parts.slice(1).join(' ') || '');
+      setValue('email', user.email || '');
+    }
+  }, [user, setValue]);
 
   if (authLoading) return <div className="min-h-screen flex items-center justify-center">Cargando...</div>;
 

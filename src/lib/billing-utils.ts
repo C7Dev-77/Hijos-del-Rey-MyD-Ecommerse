@@ -69,7 +69,7 @@ export function generateInvoicePDFContent(invoice: {
   const subtotal = invoice.items.reduce((s, i) => s + i.quantity * i.unitPrice, 0);
   const totalTax = invoice.items.reduce((s, i) => s + (i.quantity * i.unitPrice * i.tax) / 100, 0);
   const total = subtotal + totalTax;
-  const companyName = settings?.company_name || "M&D Hijos del Rey S.A.S";
+  const companyName = settings?.company_name || "M&D Hijos del Rey";
   const companyNit = settings?.nit || "900.123.456-7";
   const companyAddress = settings?.address || "Bogotá D.C.";
   const companyPhone = settings?.phone || "+57 1 234 5678";

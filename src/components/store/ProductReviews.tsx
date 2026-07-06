@@ -60,7 +60,7 @@ export function ProductReviews({ productId }: { productId: string }) {
             {
                 product_id: productId,
                 user_id: user.id,
-                user_name: user?.user_metadata?.name || 'Cliente Verificado',
+                user_name: user?.user_metadata?.name || user?.user_metadata?.full_name || 'Cliente Verificado',
                 rating: newRating,
                 comment: newComment.trim(),
             },
@@ -70,7 +70,8 @@ export function ProductReviews({ productId }: { productId: string }) {
             if (error.code === '42P01') {
                 toast.error('La funcionalidad de reseñas se habilitará pronto.');
             } else {
-                toast.error('No se pudo enviar la reseña.');
+                toast.error('No se pudo enviar la reseña: ' + error.message);
+                console.error("Supabase insert error:", error);
             }
         } else {
             toast.success('¡Gracias por tu reseña!');
