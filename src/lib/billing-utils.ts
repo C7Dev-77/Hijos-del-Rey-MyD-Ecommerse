@@ -74,7 +74,7 @@ export function generateInvoicePDFContent(invoice: {
   const companyAddress = settings?.address || "Bogotá D.C.";
   const companyPhone = settings?.phone || "+57 1 234 5678";
   const companyEmail = settings?.email || "facturacion@mdhijos.com";
-  const companyLogo = settings?.logo_url;
+  const companyLogo = settings?.logo_url || window.location.origin + "/logo.png";
   const resolutionText = settings?.resolution_number
     ? `Resolución DIAN No. ${settings.resolution_number} del ${settings.resolution_date || 'YYYY-MM-DD'} | Rango ${settings.prefix}-${settings.start_range} a ${settings.prefix}-${settings.end_range}`
     : "Resolución DIAN pendiente de configurar";
@@ -87,13 +87,15 @@ export function generateInvoicePDFContent(invoice: {
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Segoe UI', Arial, sans-serif; color: #2d1f14; padding: 40px; max-width: 800px; margin: auto; }
-    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; border-bottom: 3px solid #4a3728; padding-bottom: 20px; }
-    .company-info { max-width: 60%; }
-    .company-logo { max-width: 150px; max-height: 80px; margin-bottom: 10px; object-fit: contain; }
-    .company { font-size: 22px; font-weight: bold; color: #4a3728; }
-    .company-sub { font-size: 12px; color: #8a7060; margin-top: 4px; }
-    .invoice-title { font-size: 28px; font-weight: bold; color: #4a3728; text-align: right; }
-    .invoice-num { font-size: 14px; color: #8a7060; text-align: right; margin-top: 4px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 3px solid #4a3728; padding-bottom: 20px; }
+    .header-left { display: flex; align-items: center; gap: 20px; }
+    .company-info { display: flex; flex-direction: column; }
+    .company-logo { width: 100px; height: auto; object-fit: contain; border-radius: 8px; }
+    .company { font-size: 22px; font-weight: bold; color: #4a3728; line-height: 1.2; }
+    .company-sub { font-size: 12px; color: #8a7060; margin-top: 2px; }
+    .header-right { text-align: right; }
+    .invoice-title { font-size: 26px; font-weight: bold; color: #4a3728; letter-spacing: -0.5px; }
+    .invoice-num { font-size: 14px; color: #8a7060; margin-top: 4px; font-weight: 500; }
     .details { display: flex; justify-content: space-between; margin-bottom: 30px; }
     .details-section { font-size: 13px; line-height: 1.8; }
     .details-section strong { color: #4a3728; }
@@ -112,14 +114,16 @@ export function generateInvoicePDFContent(invoice: {
 </head>
 <body>
   <div class="header">
-    <div class="company-info">
+    <div class="header-left">
       ${companyLogo ? `<img src="${companyLogo}" alt="Logo" class="company-logo">` : ''}
-      <div class="company">${companyName}</div>
-      <div class="company-sub">NIT: ${companyNit}</div>
-      <div class="company-sub">${companyAddress}</div>
-      <div class="company-sub">Tel: ${companyPhone} | ${companyEmail}</div>
+      <div class="company-info">
+        <div class="company">${companyName}</div>
+        <div class="company-sub">NIT: ${companyNit}</div>
+        <div class="company-sub">${companyAddress}</div>
+        <div class="company-sub">Tel: ${companyPhone} | ${companyEmail}</div>
+      </div>
     </div>
-    <div>
+    <div class="header-right">
       <div class="invoice-title">FACTURA ELECTRÓNICA</div>
       <div class="invoice-num">${invoice.number}</div>
     </div>
