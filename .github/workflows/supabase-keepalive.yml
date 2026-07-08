@@ -1,0 +1,18 @@
+name: Keep Supabase Awake
+
+on:
+  schedule:
+    # Ejecutar todos los días a las 10:00 UTC (alrededor de las 5:00 AM hora de Colombia)
+    - cron: '0 10 * * *'
+  # Permite ejecutarlo manualmente desde la pestaña "Actions" en GitHub
+  workflow_dispatch:
+
+jobs:
+  ping-supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hacer petición a Supabase
+        run: |
+          curl -X GET "https://tcsljaqcmcadhhspdvco.supabase.co/rest/v1/products?select=id&limit=1" \
+          -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjc2xqYXFjbWNhZGhoc3BkdmNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzODg4ODksImV4cCI6MjA4Nzk2NDg4OX0.aNMh4MKDkvbZNkf3I2LAtUnm5Eo6q9mEXsQ3mDF_DqA" \
+          -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjc2xqYXFjbWNhZGhoc3BkdmNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzODg4ODksImV4cCI6MjA4Nzk2NDg4OX0.aNMh4MKDkvbZNkf3I2LAtUnm5Eo6q9mEXsQ3mDF_DqA"
