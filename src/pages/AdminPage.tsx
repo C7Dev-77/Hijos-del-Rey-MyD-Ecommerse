@@ -45,6 +45,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import HomeContentTab from '@/components/admin/HomeContentTab';
 import ImageUploader from '@/components/admin/ImageUploader';
+import SingleImageUploader from '@/components/admin/SingleImageUploader';
 import { BillingTab } from '@/components/admin/billing/BillingTab';
 
 type AdminTab = 'dashboard' | 'products' | 'orders' | 'blog' | 'quotes' | 'home' | 'config' | 'nosotros' | 'billing';
@@ -1802,7 +1803,14 @@ function NosotrosTab() {
               <div className="space-y-3 flex-1 flex flex-col">
                 <div><Label className="text-xs text-muted-foreground">Nombre completo</Label><Input value={member.name} onChange={e => setTeamMember(idx, 'name', e.target.value)} className="mt-1 h-8 text-sm" /></div>
                 <div><Label className="text-xs text-muted-foreground">Cargo / Rol</Label><Input value={member.role} onChange={e => setTeamMember(idx, 'role', e.target.value)} className="mt-1 h-8 text-sm" /></div>
-                <div><Label className="text-xs text-muted-foreground">URL de la Foto</Label><Input value={member.image} onChange={e => setTeamMember(idx, 'image', e.target.value)} className="mt-1 h-8 text-sm" placeholder="https://..." /></div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Foto del Integrante</Label>
+                  <SingleImageUploader
+                    value={member.image}
+                    onChange={url => setTeamMember(idx, 'image', url)}
+                    className="mt-1"
+                  />
+                </div>
                 <div className="flex-1 flex flex-col"><Label className="text-xs text-muted-foreground">Biografía (Se ve al girar la tarjeta)</Label><Textarea value={member.bio} onChange={e => setTeamMember(idx, 'bio', e.target.value)} className="mt-1 resize-none flex-1 min-h-[80px] text-sm" /></div>
               </div>
             </div>
