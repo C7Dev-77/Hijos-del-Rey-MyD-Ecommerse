@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import ScrollToTop from "./components/layout/ScrollToTop";
 import { ProtectedRoute } from "./components/layout/ProtectedRoute";
 import { useAuthStore } from "./store/authStore";
@@ -65,6 +65,21 @@ function FloatingElements() {
   );
 }
 
+// Detecta cuando un admin llega a '/' (post Google OAuth) y lo redirige al panel
+function AdminRedirect() {
+  const { isAuthenticated, isAdmin, isLoading } = useAuthStore();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && isAdmin && location.pathname === '/') {
+      navigate('/admin', { replace: true });
+    }
+  }, [isLoading, isAuthenticated, isAdmin, location.pathname, navigate]);
+
+  return null;
+}
+
 function AppWithAuth() {
   const { initialize } = useAuthStore();
   const { fetchProducts, fetchBlogPosts, fetchSettings } = useAdminStore();
@@ -86,6 +101,7 @@ function AppWithAuth() {
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <ScrollToTop />
+      <AdminRedirect />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Rutas públicas */}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, ArrowRight, ArrowLeft } from 'lucide-react';
@@ -21,16 +21,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const navigate = useNavigate();
-  const { login, loginWithGoogle, isAdmin, isAuthenticated } = useAuthStore();
-
-  // Si un admin ya está autenticado (p.ej., después del redirect de Google OAuth), redirigirlo al panel
-  useEffect(() => {
-    if (isAuthenticated && isAdmin) {
-      navigate('/admin', { replace: true });
-    } else if (isAuthenticated && !isAdmin) {
-      navigate('/', { replace: true });
-    }
-  }, [isAuthenticated, isAdmin, navigate]);
+  const { login, loginWithGoogle } = useAuthStore();
 
   const {
     register,
