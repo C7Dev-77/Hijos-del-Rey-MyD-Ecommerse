@@ -93,7 +93,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/`,
+        // Redirect back to /login — the page will detect the role and send admin to /admin
+        redirectTo: `${window.location.origin}/login`,
       },
     });
 
