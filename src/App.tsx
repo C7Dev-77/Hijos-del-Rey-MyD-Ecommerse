@@ -65,17 +65,22 @@ function FloatingElements() {
   );
 }
 
-// Detecta cuando un admin llega a '/' (post Google OAuth) y lo redirige al panel
+// Solo redirige al admin cuando viene del callback de Google OAuth
+// (detectando el hash #access_token en la URL). Así los admins
+// pueden navegar libremente sin ser forzados a /admin cada vez.
 function AdminRedirect() {
   const { isAuthenticated, isAdmin, isLoading } = useAuthStore();
   const navigate = useNavigate();
-  const location = useLocation();
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated && isAdmin && location.pathname === '/') {
+    // Solo actuar si venimos de un OAuth redirect de Google (el hash contiene access_token)
+    const isOAuthCallback = window.location.hash.includes('access_token');
+    if (!isLoading && isAuthenticated && isAdmin && isOAuthCallback) {
+      // Limpiar el hash de la URL antes de redirigir
+      window.history.replaceState(null, '', window.location.pathname);
       navigate('/admin', { replace: true });
     }
-  }, [isLoading, isAuthenticated, isAdmin, location.pathname, navigate]);
+  }, [isLoading, isAuthenticated, isAdmin, navigate]);
 
   return null;
 }
