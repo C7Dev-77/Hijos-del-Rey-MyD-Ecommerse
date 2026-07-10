@@ -607,18 +607,44 @@ export const useAdminStore = create<AdminState>()(
         if (data) {
           const parsed = mapSettingsFromDB(data);
           const currentState = get();
-          set({
-            storeSettings: { ...currentState.storeSettings, ...parsed.storeSettings },
-            homePageContent: { ...currentState.homePageContent, ...parsed.homePageContent },
-            contactInfo: { ...currentState.contactInfo, ...parsed.contactInfo },
-            // Cargar aboutPageContent desde Supabase si existe
-            ...(data.about_page_content
-              ? { aboutPageContent: { ...currentState.aboutPageContent, ...(data.about_page_content as Partial<AboutPageContent>) } }
-              : {}),
-          });
+
+          if (data.about_page_content) {
+            // Supabase ya tiene datos → usarlos (fuente única de verdad)
+            set({
+              storeSettings: { ...currentState.storeSettings, ...parsed.storeSettings },
+              homePageContent: { ...currentState.homePageContent, ...parsed.homePageContent },
+              contactInfo: { ...currentState.contactInfo, ...parsed.contactInfo },
+              aboutPageContent: {
+                ...currentState.aboutPageContent,
+                ...(data.about_page_content as Partial<AboutPageContent>),
+              },
+            });
+          } else {
+            // Supabase NO tiene datos de Nosotros todavía → subir los del localStorage/default
+            // La política RLS bloquea a usuarios anónimos; solo el admin puede escribir.
+            set({
+              storeSettings: { ...currentState.storeSettings, ...parsed.storeSettings },
+              homePageContent: { ...currentState.homePageContent, ...parsed.homePageContent },
+              contactInfo: { ...currentState.contactInfo, ...parsed.contactInfo },
+            });
+            // Auto-sincronizar: intentar subir los datos locales a Supabase
+            supabase
+              .from('app_settings')
+              .update({ about_page_content: currentState.aboutPageContent })
+              .eq('id', 1)
+              .then(({ error: syncError }) => {
+                if (syncError) {
+                  // Normal para visitantes anónimos (RLS los bloquea) — no es un error real
+                  console.info('aboutPageContent no sincronizado (usuario sin permisos de escritura):', syncError.message);
+                } else {
+                  console.info('aboutPageContent sincronizado automáticamente con Supabase.');
+                }
+              });
+          }
         }
         set({ isLoadingSettings: false });
       },
+
 
       updateContactInfo: async (info) => {
         set((state) => ({ contactInfo: { ...state.contactInfo, ...info } }));
