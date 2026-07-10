@@ -169,16 +169,16 @@ const defaultContactInfo: ContactInfo = {
 };
 
 const defaultHomePageContent: HomePageContent = {
-  heroTitle: 'Muebles que Cuentan Historias',
-  heroSubtitle: 'Artesanía colombiana en cada detalle',
+  heroTitle: 'Amoblar con Calidad y Economía.',
+  heroSubtitle: 'Calidad artesanal 100% propia, directo desde Sampués a precios económicos.',
   heroImage: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1920',
   favoritesTitle: 'Los Favoritos',
   bestSellersTitle: 'Más Vendidos',
   newArrivalsTitle: 'Recién Llegados',
   designsTitle: 'Diseños que Transforman Espacios',
-  heroBadgeText: '✨ Nuevos diseños 2025',
-  heroButton1Text: 'Explorar Catálogo',
-  heroButton2Text: 'Cotizar Mueble a Medida',
+  heroBadgeText: '✨ Colección 2026',
+  heroButton1Text: 'Ver Catálogo',
+  heroButton2Text: 'Cotizar Ahora',
   aboutSectionTitle: 'Artesanía de Excelencia',
   aboutSectionText: 'Nuestro compromiso es crear piezas únicas que transformen tus espacios. Cada mueble está fabricado con maderas de origen sostenible y mentes creativas.',
   aboutSectionButtonText: 'Conoce Nuestra Historia',
@@ -724,12 +724,12 @@ export const useAdminStore = create<AdminState>()(
         })),
     }),
     {
-      name: 'myd-admin-store',
+      name: 'myd-admin-store-v2', // ← nombre nuevo para limpiar el caché viejo automáticamente
       partialize: (state) => ({
-        contactInfo: state.contactInfo,
-        homePageContent: state.homePageContent,
+        // Solo persistir datos que son puramente locales y no tienen fuente en Supabase.
+        // homePageContent, contactInfo y storeSettings se cargan SIEMPRE desde Supabase
+        // para evitar mostrar contenido desactualizado en navegadores nuevos.
         aboutPageContent: state.aboutPageContent,
-        storeSettings: state.storeSettings,
         quotes: state.quotes,
       }),
     }
