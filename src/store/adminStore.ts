@@ -145,7 +145,7 @@ interface AdminState {
   // Contact, Home, Store Settings (Ahora se guardan en Supabase)
   updateContactInfo: (info: Partial<ContactInfo>) => Promise<void>;
   updateHomePageContent: (content: Partial<HomePageContent>) => Promise<void>;
-  updateAboutPageContent: (content: Partial<AboutPageContent>) => void;
+  updateAboutPageContent: (content: Partial<AboutPageContent>) => Promise<void>;
   updateStoreSettings: (settings: Partial<StoreSettings>) => Promise<void>;
 
   // Quotes (Cotizaciones)
@@ -606,12 +606,15 @@ export const useAdminStore = create<AdminState>()(
 
         if (data) {
           const parsed = mapSettingsFromDB(data);
-          // Merge with existing local state so locally-saved fields not in Supabase are preserved
           const currentState = get();
           set({
             storeSettings: { ...currentState.storeSettings, ...parsed.storeSettings },
             homePageContent: { ...currentState.homePageContent, ...parsed.homePageContent },
             contactInfo: { ...currentState.contactInfo, ...parsed.contactInfo },
+            // Cargar aboutPageContent desde Supabase si existe
+            ...(data.about_page_content
+              ? { aboutPageContent: { ...currentState.aboutPageContent, ...(data.about_page_content as Partial<AboutPageContent>) } }
+              : {}),
           });
         }
         set({ isLoadingSettings: false });
@@ -703,9 +706,20 @@ export const useAdminStore = create<AdminState>()(
       },
 
 
-      // ─── About Page (localStorage only) ─────────────────────────
-      updateAboutPageContent: (content) =>
-        set((state) => ({ aboutPageContent: { ...state.aboutPageContent, ...content } })),
+      // ─── About Page (Supabase + localStorage fallback) ──────────
+      updateAboutPageContent: async (content) => {
+        set((state) => ({ aboutPageContent: { ...state.aboutPageContent, ...content } }));
+        const updated = get().aboutPageContent;
+
+        const { error } = await supabase
+          .from('app_settings')
+          .update({ about_page_content: updated })
+          .eq('id', 1);
+
+        if (error) {
+          console.warn('Error saving aboutPageContent to Supabase:', error.message);
+        }
+      },
 
       // ─── Quotes ────────────────────────────────────────────────
       addQuote: (quote) =>
@@ -724,22 +738,17 @@ export const useAdminStore = create<AdminState>()(
         })),
     }),
     {
-      name: 'myd-admin-store', // Volvemos al nombre original para recuperar los cambios del usuario
+      name: 'myd-admin-store',
       partialize: (state) => ({
-        // Solo persistimos lo local
-        aboutPageContent: state.aboutPageContent,
+        // Solo persistir cotizaciones (datos 100% locales sin fuente en Supabase)
+        // aboutPageContent, homePageContent, contactInfo y storeSettings se cargan
+        // SIEMPRE desde Supabase para que todos los navegadores vean lo mismo.
         quotes: state.quotes,
       }),
-      merge: (persistedState: any, currentState) => {
-        // Al cargar del caché (que puede tener datos viejos de homePageContent), 
-        // solo tomamos aboutPageContent y quotes. El resto se inicializa con los defaults del código 
-        // y luego se sobreescribe con Supabase.
-        return {
-          ...currentState,
-          aboutPageContent: persistedState?.aboutPageContent ?? currentState.aboutPageContent,
-          quotes: persistedState?.quotes ?? currentState.quotes,
-        };
-      }
+      merge: (persistedState: any, currentState) => ({
+        ...currentState,
+        quotes: persistedState?.quotes ?? currentState.quotes,
+      }),
     }
   )
 );
