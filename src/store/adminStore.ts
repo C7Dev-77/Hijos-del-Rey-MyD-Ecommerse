@@ -724,14 +724,22 @@ export const useAdminStore = create<AdminState>()(
         })),
     }),
     {
-      name: 'myd-admin-store-v2', // ← nombre nuevo para limpiar el caché viejo automáticamente
+      name: 'myd-admin-store', // Volvemos al nombre original para recuperar los cambios del usuario
       partialize: (state) => ({
-        // Solo persistir datos que son puramente locales y no tienen fuente en Supabase.
-        // homePageContent, contactInfo y storeSettings se cargan SIEMPRE desde Supabase
-        // para evitar mostrar contenido desactualizado en navegadores nuevos.
+        // Solo persistimos lo local
         aboutPageContent: state.aboutPageContent,
         quotes: state.quotes,
       }),
+      merge: (persistedState: any, currentState) => {
+        // Al cargar del caché (que puede tener datos viejos de homePageContent), 
+        // solo tomamos aboutPageContent y quotes. El resto se inicializa con los defaults del código 
+        // y luego se sobreescribe con Supabase.
+        return {
+          ...currentState,
+          aboutPageContent: persistedState?.aboutPageContent ?? currentState.aboutPageContent,
+          quotes: persistedState?.quotes ?? currentState.quotes,
+        };
+      }
     }
   )
 );
