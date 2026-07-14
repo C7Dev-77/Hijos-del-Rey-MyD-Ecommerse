@@ -58,32 +58,56 @@ export default function HomeContentTab() {
 
     const handleSaveStore = async () => {
         setIsSaving(true);
-        await updateStoreSettings(storeData);
-        toast.success('Configuración guardada ✓');
-        setIsSaving(false);
+        try {
+            await updateStoreSettings(storeData);
+            toast.success('Configuración guardada ✓');
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'Error desconocido';
+            toast.error('Error al guardar configuración', { description: msg });
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const handleSaveContact = async () => {
         setIsSaving(true);
-        await updateContactInfo(contactData);
-        toast.success('Datos de contacto actualizados ✓');
-        setIsSaving(false);
+        try {
+            await updateContactInfo(contactData);
+            toast.success('Datos de contacto actualizados ✓');
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'Error desconocido';
+            toast.error('Error al actualizar datos de contacto', { description: msg });
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const handleSaveSEO = async () => {
         setIsSaving(true);
-        await updateStoreSettings(storeData);
-        // Aplicar inmediatamente al <head>
-        document.title = storeData.metaTitle;
-        toast.success('SEO actualizado ✓ — Los cambios ya están en el <head>');
-        setIsSaving(false);
+        try {
+            await updateStoreSettings(storeData);
+            // Aplicar inmediatamente al <head>
+            document.title = storeData.metaTitle;
+            toast.success('SEO actualizado ✓ — Los cambios ya están en el <head>');
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'Error desconocido';
+            toast.error('Error al actualizar SEO', { description: msg });
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const handleSavePolicies = async () => {
         setIsSaving(true);
-        await updateStoreSettings(storeData);
-        toast.success('Políticas guardadas ✓');
-        setIsSaving(false);
+        try {
+            await updateStoreSettings(storeData);
+            toast.success('Políticas guardadas ✓');
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'Error desconocido';
+            toast.error('Error al guardar políticas', { description: msg });
+        } finally {
+            setIsSaving(false);
+        }
     };
 
 

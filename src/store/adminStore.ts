@@ -483,16 +483,12 @@ export const useAdminStore = create<AdminState>()(
           .order('created_at', { ascending: false });
 
         if (error) {
-          console.warn('Supabase no disponible, usando datos mock:', error.message);
+          console.warn('Supabase no disponible:', error.message);
           set({ isLoadingBlog: false });
           return;
         }
 
-        if (data && data.length > 0) {
-          set({ blogPosts: data.map(mapBlogFromDB), isLoadingBlog: false });
-        } else {
-          set({ isLoadingBlog: false });
-        }
+        set({ blogPosts: (data || []).map(mapBlogFromDB), isLoadingBlog: false });
       },
 
       addBlogPost: async (post) => {
@@ -501,9 +497,8 @@ export const useAdminStore = create<AdminState>()(
           .insert(mapBlogToDB(post));
 
         if (error) {
-          console.error('Error al crear artículo:', error.message);
-          set((state) => ({ blogPosts: [...state.blogPosts, post] }));
-          return;
+          console.error('Error al crear artículo en Supabase:', error.message);
+          throw new Error('No se pudo crear el artículo en la base de datos: ' + error.message);
         }
 
         await get().fetchBlogPosts();
@@ -520,7 +515,8 @@ export const useAdminStore = create<AdminState>()(
           .eq('id', id);
 
         if (error) {
-          console.error('Error al actualizar artículo:', error.message);
+          console.error('Error al actualizar artículo en Supabase:', error.message);
+          throw new Error('No se pudo actualizar el artículo en la base de datos: ' + error.message);
         }
 
         set((state) => ({
@@ -535,7 +531,8 @@ export const useAdminStore = create<AdminState>()(
           .eq('id', id);
 
         if (error) {
-          console.error('Error al eliminar artículo:', error.message);
+          console.error('Error al eliminar artículo en Supabase:', error.message);
+          throw new Error('No se pudo eliminar el artículo de la base de datos: ' + error.message);
         }
 
         set((state) => ({
@@ -650,7 +647,8 @@ export const useAdminStore = create<AdminState>()(
         set((state) => ({ contactInfo: { ...state.contactInfo, ...info } }));
         const updated = get().contactInfo;
 
-        await supabase.from('app_settings').update({
+        const { error } = await supabase.from('app_settings').upsert({
+          id: 1,
           contact_phone: updated.phone,
           contact_email: updated.email,
           contact_address: updated.address,
@@ -659,7 +657,12 @@ export const useAdminStore = create<AdminState>()(
           social_facebook: updated.socialLinks.facebook,
           social_instagram: updated.socialLinks.instagram,
           social_pinterest: updated.socialLinks.pinterest,
-        }).eq('id', 1);
+        });
+
+        if (error) {
+          console.error('Error al actualizar contacto en Supabase:', error.message);
+          throw new Error('No se pudo guardar la información de contacto: ' + error.message);
+        }
       },
 
       updateHomePageContent: async (content) => {
@@ -668,6 +671,7 @@ export const useAdminStore = create<AdminState>()(
 
         // Try saving ALL fields (including newer columns)
         const allFields: Record<string, unknown> = {
+          id: 1,
           hero_title: updated.heroTitle,
           hero_subtitle: updated.heroSubtitle,
           hero_image: updated.heroImage,
@@ -684,12 +688,13 @@ export const useAdminStore = create<AdminState>()(
           promos: updated.promos,
         };
 
-        const { error } = await supabase.from('app_settings').update(allFields).eq('id', 1);
+        const { error } = await supabase.from('app_settings').upsert(allFields);
 
         if (error) {
-          console.warn('Full update failed, retrying with core columns only:', error.message);
+          console.warn('Full upsert failed, retrying with core columns only:', error.message);
           // Retry with only the core columns guaranteed to exist
           const coreFields: Record<string, unknown> = {
+            id: 1,
             hero_title: updated.heroTitle,
             hero_subtitle: updated.heroSubtitle,
             hero_image: updated.heroImage,
@@ -699,9 +704,10 @@ export const useAdminStore = create<AdminState>()(
             new_arrivals_title: updated.newArrivalsTitle,
             designs_title: updated.designsTitle,
           };
-          const { error: coreError } = await supabase.from('app_settings').update(coreFields).eq('id', 1);
+          const { error: coreError } = await supabase.from('app_settings').upsert(coreFields);
           if (coreError) {
-            console.error('Core update also failed:', coreError.message);
+            console.error('Core upsert also failed:', coreError.message);
+            throw new Error('No se pudo guardar la página de inicio: ' + coreError.message);
           }
         }
       },
@@ -710,7 +716,8 @@ export const useAdminStore = create<AdminState>()(
         set((state) => ({ storeSettings: { ...state.storeSettings, ...settings } }));
         const updated = get().storeSettings;
 
-        const { error } = await supabase.from('app_settings').update({
+        const { error } = await supabase.from('app_settings').upsert({
+          id: 1,
           store_name: updated.storeName,
           store_description: updated.storeDescription,
           logo_url: updated.logoUrl,
@@ -724,10 +731,11 @@ export const useAdminStore = create<AdminState>()(
           privacy_policy: updated.privacyPolicy,
           whatsapp_message: updated.whatsappMessage,
           checkout_message: updated.checkoutMessage,
-        }).eq('id', 1);
+        });
 
         if (error) {
-          console.warn('Algunas columnas nuevas podrían no estar en Supabase, error ignorado localmente:', error.message);
+          console.error('Error al actualizar configuración de tienda en Supabase:', error.message);
+          throw new Error('No se pudo guardar la configuración general: ' + error.message);
         }
       },
 
@@ -739,11 +747,11 @@ export const useAdminStore = create<AdminState>()(
 
         const { error } = await supabase
           .from('app_settings')
-          .update({ about_page_content: updated })
-          .eq('id', 1);
+          .upsert({ id: 1, about_page_content: updated });
 
         if (error) {
-          console.warn('Error saving aboutPageContent to Supabase:', error.message);
+          console.error('Error al guardar Nosotros en Supabase:', error.message);
+          throw new Error('No se pudo guardar la página Nosotros: ' + error.message);
         }
       },
 

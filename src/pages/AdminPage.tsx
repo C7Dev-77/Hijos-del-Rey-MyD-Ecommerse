@@ -406,9 +406,14 @@ function HomeTab() {
   const setField = <K extends keyof HomePageContent>(key: K, value: HomePageContent[K]) =>
     setForm(prev => ({ ...prev, [key]: value }));
 
-  const handleSave = () => {
-    updateHomePageContent(form);
-    toast.success('Página de Inicio actualizada ✓');
+  const handleSave = async () => {
+    try {
+      await updateHomePageContent(form);
+      toast.success('Página de Inicio actualizada ✓');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error desconocido';
+      toast.error('Error al actualizar Inicio', { description: msg });
+    }
   };
 
   // Promos helpers
@@ -1447,7 +1452,7 @@ function BlogTab() {
     setIsDialogOpen(true);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const postData: BlogPost = {
       id: editingPost?.id || Date.now().toString(),
       title: formData.title,
@@ -1463,23 +1468,32 @@ function BlogTab() {
       createdAt: editingPost?.createdAt || new Date().toISOString().split('T')[0],
     };
 
-    if (editingPost) {
-      updateBlogPost(editingPost.id, postData);
-      toast.success('Artículo actualizado');
-    } else {
-      addBlogPost(postData);
-      toast.success('Artículo creado');
+    try {
+      if (editingPost) {
+        await updateBlogPost(editingPost.id, postData);
+        toast.success('Artículo actualizado');
+      } else {
+        await addBlogPost(postData);
+        toast.success('Artículo creado');
+      }
+      setIsDialogOpen(false);
+      resetForm();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error desconocido';
+      toast.error(editingPost ? 'Error al actualizar artículo' : 'Error al crear artículo', { description: msg });
     }
-
-    setIsDialogOpen(false);
-    resetForm();
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (deleteId) {
-      deleteBlogPost(deleteId);
-      toast.success('Artículo eliminado');
-      setDeleteId(null);
+      try {
+        await deleteBlogPost(deleteId);
+        toast.success('Artículo eliminado');
+        setDeleteId(null);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Error desconocido';
+        toast.error('Error al eliminar artículo', { description: msg });
+      }
     }
   };
 
@@ -1678,9 +1692,14 @@ function NosotrosTab() {
   const setField = <K extends keyof AboutPageContent>(key: K, value: AboutPageContent[K]) =>
     setForm(prev => ({ ...prev, [key]: value }));
 
-  const handleSave = () => {
-    updateAboutPageContent(form);
-    toast.success('Página Nosotros actualizada ✓');
+  const handleSave = async () => {
+    try {
+      await updateAboutPageContent(form);
+      toast.success('Página Nosotros actualizada ✓');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error desconocido';
+      toast.error('Error al actualizar Nosotros', { description: msg });
+    }
   };
 
   // Timeline
