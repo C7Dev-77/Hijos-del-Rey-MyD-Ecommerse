@@ -1,24 +1,42 @@
 -- =====================================================================
--- ACTIVAR REALTIME EN app_settings
+-- CORRECCIÓN DE PERMISOS Y ACTIVACIÓN DE REALTIME EN app_settings
 -- Hijos del Rey M&D - E-commerce
 -- =====================================================================
 -- INSTRUCCIONES:
---   1. Ve a Supabase Dashboard → tu proyecto
---   2. Ve a "SQL Editor" en la barra lateral
---   3. Crea una nueva consulta y pega este script
---   4. Presiona "Run" (Ctrl+Enter)
---
--- Esto habilita Supabase Realtime en la tabla app_settings para que
--- cuando el admin guarda cambios (Nosotros, Inicio, Contacto),
--- TODOS los navegadores abiertos se actualicen automáticamente.
+--   1. Ve a Supabase Dashboard (https://supabase.com/dashboard) → tu proyecto
+--   2. Ve a "SQL Editor" en la barra lateral izquierda
+--   3. Crea una nueva consulta ("New Query")
+--   4. Pega este script completo y presiona "Run" (Ctrl+Enter)
 -- =====================================================================
 
--- Agregar la tabla app_settings a la publicación de Realtime
--- (si ya está agregada, este comando no hace nada — es seguro ejecutar)
+-- ── 1. OTORGAR PRIVILEGIOS DE POSTGRES A LA TABLA ────────────────────
+-- Esto soluciona el error de "permission denied for table app_settings"
+-- permitiendo que la Anon Key del cliente pueda consultar los datos.
+GRANT SELECT ON public.app_settings TO anon, authenticated;
+GRANT ALL ON public.app_settings TO postgres, service_role;
+
+-- ── 2. CONFIGURAR RLS (ROW LEVEL SECURITY) ──────────────────────────
+ALTER TABLE public.app_settings ENABLE ROW LEVEL SECURITY;
+
+-- Política de lectura pública: cualquier visitante puede leer la configuración
+DROP POLICY IF EXISTS "app_settings_public_read" ON public.app_settings;
+CREATE POLICY "app_settings_public_read" ON public.app_settings
+  FOR SELECT TO public USING (true);
+
+-- Política de actualización: sólo usuarios autenticados administradores
+DROP POLICY IF EXISTS "app_settings_admin_update" ON public.app_settings;
+CREATE POLICY "app_settings_admin_update" ON public.app_settings
+  FOR UPDATE TO authenticated 
+  USING (public.is_admin()) 
+  WITH CHECK (public.is_admin());
+
+-- ── 3. ACTIVAR REALTIME ──────────────────────────────────────────────
+-- Permite la sincronización instantánea entre navegadores
 ALTER PUBLICATION supabase_realtime ADD TABLE public.app_settings;
 
--- Verificar que quedó registrada (deberías ver app_settings en el resultado)
+-- ── 4. VERIFICACIÓN FINAL ────────────────────────────────────────────
+-- Devuelve las tablas activas en Realtime (debe aparecer app_settings)
 SELECT schemaname, tablename
 FROM pg_publication_tables
 WHERE pubname = 'supabase_realtime'
-  AND tablename IN ('app_settings', 'orders', 'blog_posts', 'products');
+  AND tablename = 'app_settings';
