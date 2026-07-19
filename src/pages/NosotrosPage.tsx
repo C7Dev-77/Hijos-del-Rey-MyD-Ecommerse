@@ -17,7 +17,13 @@ const ICON_MAP: Record<string, LucideIcon> = {
 };
 
 export default function NosotrosPage() {
-  const { aboutPageContent: a } = useAdminStore();
+  const { aboutPageContent: a, fetchSettings } = useAdminStore();
+
+  // Forzar carga desde Supabase al montar para garantizar datos actualizados
+  // incluso si el store local tiene una versión antigua en caché
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
 
   usePageSEO({
     title: 'Nuestra Historia — Más de 10 Años de Artesanía',

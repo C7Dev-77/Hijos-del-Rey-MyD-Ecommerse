@@ -10,6 +10,7 @@ import { useAuthStore } from "./store/authStore";
 import { useAdminStore } from "./store/adminStore";
 import { useSEO } from "./hooks/useSEO";
 import { useRealtimeOrders } from "./hooks/useRealtimeOrders";
+import { useRealtimeSettings } from "./hooks/useRealtimeSettings";
 import { WhatsAppButton } from "./components/chat/WhatsAppButton";
 import { AIChatBot } from "./components/chat/AIChatBot";
 
@@ -94,6 +95,11 @@ function AppWithAuth() {
 
   // Escuchar cambios en los pedidos en tiempo real
   useRealtimeOrders();
+
+  // Escuchar cambios en app_settings en tiempo real (Inicio, Nosotros, Contacto...)
+  // Esto garantiza que TODOS los navegadores se actualicen automáticamente
+  // cuando el admin guarda cambios, sin necesidad de refrescar la página.
+  useRealtimeSettings();
 
   // Inicializar Supabase Auth y cargar datos al arrancar la app
   useEffect(() => {
