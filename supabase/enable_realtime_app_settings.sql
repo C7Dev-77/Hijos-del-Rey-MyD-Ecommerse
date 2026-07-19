@@ -1,5 +1,5 @@
 -- =====================================================================
--- CORRECCIÓN DE PERMISOS Y ACTIVACIÓN DE REALTIME EN app_settings
+-- CORRECCIÓN DE PERMISOS EN app_settings
 -- Hijos del Rey M&D - E-commerce
 -- =====================================================================
 -- INSTRUCCIONES:
@@ -7,9 +7,12 @@
 --   2. Ve a "SQL Editor" en la barra lateral izquierda
 --   3. Crea una nueva consulta ("New Query")
 --   4. Pega este script completo y presiona "Run" (Ctrl+Enter)
+--
+-- NOTA: Si te salía un error diciendo que la tabla ya es miembro de
+-- "supabase_realtime", hemos removido esa línea ya que ya está activa.
 -- =====================================================================
 
--- ── 1. OTORGAR PRIVILEGIOS DE POSTGRES A LA TABLA ────────────────────
+-- ── 1. OTORGAR PRIVILEGIOS A LA TABLA ────────────────────────────────
 -- Esto soluciona el error de "permission denied for table app_settings"
 -- permitiendo que la Anon Key del cliente pueda consultar los datos.
 GRANT SELECT ON public.app_settings TO anon, authenticated;
@@ -29,14 +32,3 @@ CREATE POLICY "app_settings_admin_update" ON public.app_settings
   FOR UPDATE TO authenticated 
   USING (public.is_admin()) 
   WITH CHECK (public.is_admin());
-
--- ── 3. ACTIVAR REALTIME ──────────────────────────────────────────────
--- Permite la sincronización instantánea entre navegadores
-ALTER PUBLICATION supabase_realtime ADD TABLE public.app_settings;
-
--- ── 4. VERIFICACIÓN FINAL ────────────────────────────────────────────
--- Devuelve las tablas activas en Realtime (debe aparecer app_settings)
-SELECT schemaname, tablename
-FROM pg_publication_tables
-WHERE pubname = 'supabase_realtime'
-  AND tablename = 'app_settings';
