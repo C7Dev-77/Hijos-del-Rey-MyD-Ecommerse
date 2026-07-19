@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { BookOpen, Pencil } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
@@ -11,9 +12,13 @@ import { Link } from 'react-router-dom';
 import { usePageSEO } from '@/hooks/useSEO';
 
 export default function BlogPage() {
-  const { blogPosts } = useAdminStore();
+  const { blogPosts, fetchBlogPosts } = useAdminStore();
   const featuredPost = blogPosts[0];
   const otherPosts = blogPosts.slice(1);
+
+  useEffect(() => {
+    fetchBlogPosts();
+  }, [fetchBlogPosts]);
 
   usePageSEO({
     title: 'Blog de Decoración y Muebles Artesanales',

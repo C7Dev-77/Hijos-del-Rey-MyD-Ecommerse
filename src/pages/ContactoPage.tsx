@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   MapPin,
@@ -34,7 +35,11 @@ const contactSchema = z.object({
 type ContactFormData = z.infer<typeof contactSchema>;
 
 export default function ContactoPage() {
-  const { contactInfo, addQuote } = useAdminStore();
+  const { contactInfo, addQuote, fetchSettings } = useAdminStore();
+
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
 
   usePageSEO({
     title: 'Contacto — Escríbenos o Visítanos en Sampués, Sucre',

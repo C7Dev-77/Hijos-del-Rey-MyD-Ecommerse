@@ -11,6 +11,8 @@ import { useAdminStore } from "./store/adminStore";
 import { useSEO } from "./hooks/useSEO";
 import { useRealtimeOrders } from "./hooks/useRealtimeOrders";
 import { useRealtimeSettings } from "./hooks/useRealtimeSettings";
+import { useRealtimeProducts } from "./hooks/useRealtimeProducts";
+import { useRealtimeBlog } from "./hooks/useRealtimeBlog";
 import { WhatsAppButton } from "./components/chat/WhatsAppButton";
 import { AIChatBot } from "./components/chat/AIChatBot";
 
@@ -100,6 +102,12 @@ function AppWithAuth() {
   // Esto garantiza que TODOS los navegadores se actualicen automáticamente
   // cuando el admin guarda cambios, sin necesidad de refrescar la página.
   useRealtimeSettings();
+
+  // Escuchar cambios en los productos y catálogo en tiempo real
+  useRealtimeProducts();
+
+  // Escuchar cambios en el blog en tiempo real
+  useRealtimeBlog();
 
   // Inicializar Supabase Auth y cargar datos al arrancar la app
   useEffect(() => {

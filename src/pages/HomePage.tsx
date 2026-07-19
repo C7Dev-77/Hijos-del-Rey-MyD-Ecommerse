@@ -1,5 +1,5 @@
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Truck, Shield, Hammer, Leaf } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
@@ -418,6 +418,13 @@ function CTASection() {
 
 // Main Home Page
 export default function HomePage() {
+  const { fetchSettings, fetchProducts } = useAdminStore();
+
+  useEffect(() => {
+    fetchSettings();
+    fetchProducts();
+  }, [fetchSettings, fetchProducts]);
+
   usePageSEO({
     title: 'Fábrica de Muebles en Sampués Sucre — Muebles Tapizados & Artesanales',
     description: 'M&D Hijos del Rey: Fábrica de muebles artesanales en Sampués, Sucre. Expertos en muebles tapizados, salas, comedores y alcobas. Calidad artesanal con envío a toda Colombia.',
