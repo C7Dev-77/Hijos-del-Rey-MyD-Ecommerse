@@ -1,97 +1,34 @@
-// Types
-export interface User {
-  id: string;
-  email: string;
-  password: string;
-  name: string;
-  role: 'admin' | 'customer';
-  avatar?: string;
-  phone?: string;
-  address?: string;
-}
+/**
+ * @deprecated Este archivo existe solo por compatibilidad hacia atrás.
+ * Importa los tipos desde '@/types' y formatPrice desde '@/lib/utils'.
+ *
+ * Los tipos y utilidades han sido movidos a:
+ *   - Tipos  → src/types/index.ts
+ *   - formatPrice → src/lib/utils.ts
+ *   - CATEGORIES → src/data/categories.ts
+ */
 
-export interface Product {
-  id: string;
-  name: string;
-  slug: string;
-  price: number;
-  originalPrice?: number;
-  discount?: number;
-  stock: number;
-  category: string;
-  subcategory?: string;
-  description: string;
-  shortDescription: string;
-  images: string[];
-  dimensions: {
-    width: number;
-    height: number;
-    depth: number;
-  };
-  materials: string[];
-  colors?: string[];
-  featured?: boolean;
-  bestSeller?: boolean;
-  newArrival?: boolean;
+// Re-exportar todos los tipos desde la ubicación canónica
+export type {
+  User,
+  Product,
+  ProductDimensions,
+  Category,
+  Order,
+  OrderStatus,
+  OrderProduct,
+  BlogPost,
+  CartItem,
+} from '@/types';
 
-  // Extra Admin fields
-  technicalDetails?: string;
-  shippingInfo?: string;
-  returnsInfo?: string;
+// Re-exportar formatPrice desde utils
+export { formatPrice } from '@/lib/utils';
 
-  rating: number;
-  reviewCount: number;
-  salesCount?: number;
-  createdAt: string;
-}
+// ── Datos estáticos de categorías ────────────────────────────
+// TODO: Migrar estas categorías a Supabase (tabla "categories")
+//       y remover este archivo completamente.
+import type { Category } from '@/types';
 
-export interface Category {
-  id: string;
-  name: string;
-  slug: string;
-  description: string;
-  image: string;
-  productCount: number;
-}
-
-export interface Order {
-  id: string;
-  userId: string;
-  products: {
-    productId: string;
-    quantity: number;
-    price: number;
-  }[];
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-  total: number;
-  shippingAddress: string;
-  paymentMethod: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface BlogPost {
-  id: string;
-  title: string;
-  slug: string;
-  excerpt: string;
-  content: string;
-  image: string;
-  author: string;
-  authorAvatar: string;
-  category: string;
-  tags: string[];
-  readTime: number;
-  createdAt: string;
-}
-
-export interface CartItem {
-  product: Product;
-  quantity: number;
-  madeToOrder?: boolean; // Producto fabricado a pedido (sin stock)
-}
-
-// Mock Categories
 export const CATEGORIES: Category[] = [
   {
     id: '1',
@@ -135,17 +72,8 @@ export const CATEGORIES: Category[] = [
   },
 ];
 
+// Arrays vacíos mantenidos por compatibilidad
+import type { Product, Order, BlogPost } from '@/types';
 export const PRODUCTS: Product[] = [];
 export const ORDERS: Order[] = [];
 export const BLOG_POSTS: BlogPost[] = [];
-
-// Helper functions
-export const formatPrice = (price: number): string => {
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(price);
-};
-
