@@ -114,11 +114,16 @@ export function useInvoices() {
             if (error) throw error;
             setInvoices(data || []);
             setError(null);
+            setLoading(false);
         } catch (err: any) {
+            if (err.name === 'AbortError' || err.message?.includes('Lock broken') || err.message?.includes('steal')) {
+                console.warn('Supabase lock contention in fetchInvoices, retrying...');
+                setTimeout(fetchInvoices, 100 + Math.random() * 200);
+                return;
+            }
             console.error('Error al cargar facturas:', err);
             setError(err.message);
             toast.error('Error al cargar facturas', { description: err.message });
-        } finally {
             setLoading(false);
         }
     };

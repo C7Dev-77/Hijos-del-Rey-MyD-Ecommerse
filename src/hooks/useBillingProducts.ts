@@ -53,11 +53,16 @@ export function useBillingProducts() {
             if (error) throw error;
             setProducts(data || []);
             setError(null);
+            setLoading(false);
         } catch (err: any) {
+            if (err.name === 'AbortError' || err.message?.includes('Lock broken') || err.message?.includes('steal')) {
+                console.warn('Supabase lock contention in fetchProducts, retrying...');
+                setTimeout(fetchProducts, 100 + Math.random() * 200);
+                return;
+            }
             console.error('Error al cargar productos:', err);
             setError(err.message);
             toast.error('Error al cargar productos', { description: err.message });
-        } finally {
             setLoading(false);
         }
     };

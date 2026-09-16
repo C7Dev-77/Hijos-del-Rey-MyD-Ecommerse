@@ -40,11 +40,16 @@ export function useBillingClients() {
             if (error) throw error;
             setClients(data || []);
             setError(null);
+            setLoading(false);
         } catch (err: any) {
+            if (err.name === 'AbortError' || err.message?.includes('Lock broken') || err.message?.includes('steal')) {
+                console.warn('Supabase lock contention in fetchClients, retrying...');
+                setTimeout(fetchClients, 100 + Math.random() * 200);
+                return;
+            }
             console.error('Error al cargar clientes:', err);
             setError(err.message);
             toast.error('Error al cargar clientes', { description: err.message });
-        } finally {
             setLoading(false);
         }
     };

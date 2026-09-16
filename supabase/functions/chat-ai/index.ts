@@ -94,12 +94,8 @@ FORMATO DE RESPUESTA (JSON estricto):
         generationConfig: { temperature: 0.1, responseMimeType: "application/json" },
       });
 
-      const history = (conversationHistory || []).slice(-6).map((m: any) => ({
-        role: m.role === "user" ? "user" : "model",
-        parts: [{ text: m.content }],
-      }));
-
-      const chat = model.startChat({ history });
+      // Para parse_invoice no necesitamos historial complejo, es una tarea de extracción directa.
+      const chat = model.startChat({ history: [] });
       const result = await chat.sendMessage([{ text: userMessage }]);
       const text = result.response.text();
       const cleaned = text.replace(/^```json\s*/i, "").replace(/\s*```$/i, "").trim();
