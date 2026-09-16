@@ -209,7 +209,7 @@ export function AIInvoiceAssistant({ open, onOpenChange }: AIInvoiceAssistantPro
         setMessages((prev) => [...prev, userMsg]);
         setIsTyping(true);
 
-        const newHistory = [...conversationHistory, { role: "user", content: userText }];
+        const newHistory = [...conversationHistory, { role: "user" as const, content: userText }];
 
         try {
             let assistantContent = "";
@@ -237,7 +237,7 @@ export function AIInvoiceAssistant({ open, onOpenChange }: AIInvoiceAssistantPro
             };
 
             setMessages((prev) => [...prev, assistantMsg]);
-            setConversationHistory([...newHistory, { role: "assistant", content: assistantContent }]);
+            setConversationHistory([...newHistory, { role: "assistant" as const, content: assistantContent }]);
         } catch (err: unknown) {
             const errorObj = err instanceof Error ? err : new Error(String(err));
             console.error("Error:", errorObj);
