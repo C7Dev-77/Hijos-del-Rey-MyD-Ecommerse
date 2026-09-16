@@ -40,26 +40,26 @@ serve(async (req) => {
 
 
     const prompt = `
-      Actúa como un experto en marketing de contenidos y SEO especializado en muebles artesanales y decoración de interiores.
-      Escribe un artículo de blog completo y profesional basado en el siguiente tema: "${topic}".
+      Actúa como un experto redactor de contenidos y SEO especializado en muebles artesanales, carpintería fina y decoración de interiores para la marca "M&D Hijos del Rey" (Sampués, Sucre, Colombia).
+      Escribe un artículo de blog completo, elegante y cautivador basado en el siguiente tema: "${topic}".
       Tono del artículo: ${tone}.
-      Palabras clave a incluir: ${keywords}.
+      Palabras clave a incluir de forma natural: ${keywords}.
 
       El artículo debe seguir estrictamente este formato JSON:
       {
         "title": "Título atractivo y optimizado para SEO",
         "slug": "slug-optimizado-en-minusculas-con-guiones",
-        "excerpt": "Un resumen corto y persuasivo de máximo 160 caracteres para meta-descripción",
-        "content": "Contenido en formato Markdown. Debe incluir:
-          - Un H1 al inicio.
-          - Una introducción que capte la atención.
-          - Al menos tres secciones con H2 y contenido detallado.
-          - Listas con viñetas para mejorar la lectura.
-          - Una conclusión.
-          - Un CTA (Llamado a la acción) invitando a visitar la tienda de M&D Hijos del Rey para comprar muebles artesanales de calidad."
+        "excerpt": "Un resumen corto, persuasivo y sin asteriscos de máximo 160 caracteres para la meta-descripción",
+        "content": "Contenido completo en formato Markdown bien estructurado:
+          - No incluyas un H1 ni repitas el título al inicio (la página ya lo muestra en la cabecera). Comienza directamente con una introducción atractiva de 2 párrafos.
+          - Al menos 3 secciones temáticas con subtítulos H2 (usa ## Nombre de la Sección).
+          - Incluye listas con viñetas (*) con tips prácticos, combinaciones de colores, dimensiones o ventajas de materiales.
+          - Resalta conceptos importantes con negrita (**texto**).
+          - Asegúrate de separar cada párrafo con dos saltos de línea (\\n\\n) para que la lectura sea fluida.
+          - Conclusión reflexiva y un llamado a la acción (CTA) invitando al lector a explorar el catálogo de M&D Hijos del Rey o solicitar su diseño personalizado a medida desde Sampués con envíos a toda Colombia."
       }
       
-      IMPORTANTE: Devuelve ÚNICAMENTE el objeto JSON, sin bloques de código markdown (como \`\`\`json).
+      IMPORTANTE: Devuelve ÚNICAMENTE el objeto JSON válido, sin bloques de código markdown (como \`\`\`json).
     `
 
     const result = await model.generateContent(prompt)

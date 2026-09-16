@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useParams, Navigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Calendar, Clock, Share2 } from 'lucide-react';
@@ -8,6 +9,7 @@ import { useAdminStore } from '@/store/adminStore';
 import { usePageSEO } from '@/hooks/useSEO';
 import { Button } from '@/components/ui/button';
 import DOMPurify from 'dompurify';
+import { marked } from 'marked';
 
 export default function BlogPostPage() {
     const { slug } = useParams<{ slug: string }>();
@@ -25,6 +27,18 @@ export default function BlogPostPage() {
     if (!post) {
         return <Navigate to="/blog" replace />;
     }
+
+    const parsedHtml = useMemo(() => {
+        if (!post?.content) return '';
+        let markdown = post.content;
+        // Si el contenido inicia con '# Titulo' que repite el título principal, se remueve para evitar duplicar el H1
+        if (post.title) {
+            const escaped = post.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            markdown = markdown.replace(new RegExp(`^#\\s*${escaped}\\s*\\n*`, 'i'), '');
+        }
+        const rawHtml = marked.parse(markdown, { async: false, breaks: true }) as string;
+        return DOMPurify.sanitize(rawHtml);
+    }, [post?.content, post?.title]);
 
     const handleShare = () => {
         const url = window.location.href;
@@ -108,7 +122,7 @@ export default function BlogPostPage() {
               prose-img:rounded-xl prose-img:shadow-lg
               prose-strong:text-charcoal prose-strong:font-semibold"
                     >
-                        <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }} />
+                        <div dangerouslySetInnerHTML={{ __html: parsedHtml }} />
                     </motion.article>
 
                     {/* Related Articles or Call to Action could go here */}
