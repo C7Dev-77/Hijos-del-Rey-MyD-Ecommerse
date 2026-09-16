@@ -32,9 +32,9 @@ serve(async (req) => {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey)
-    // gemini-2.5-pro: mejor modelo disponible, máxima calidad para generación de contenido
+    // gemini-3.6-flash: modelo confirmado disponible con la API key actual
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-pro',
+      model: 'gemini-3.6-flash',
       generationConfig: { temperature: 0.8, maxOutputTokens: 4096 },
     })
 
