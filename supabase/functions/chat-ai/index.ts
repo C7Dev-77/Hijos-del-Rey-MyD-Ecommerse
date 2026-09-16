@@ -22,8 +22,7 @@ serve(async (req) => {
     const { action, payload } = await req.json();
 
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-    // IMPORTANTE: El nombre correcto del modelo de Google es gemini-1.5-flash
-    const MODEL_NAME = "gemini-1.5-flash";
+    const MODEL_NAME = "gemini-3.6-flash";
 
     if (action === "chat_invoice") {
       const { userMessage, conversationHistory } = payload;

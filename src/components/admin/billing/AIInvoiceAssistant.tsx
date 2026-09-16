@@ -323,7 +323,7 @@ export function AIInvoiceAssistant({ open, onOpenChange }: AIInvoiceAssistantPro
                                 <DialogTitle className="text-base font-semibold flex items-center gap-2">
                                     FacturaBot
                                     <span className="text-xs font-normal bg-gradient-to-r from-violet-500 to-purple-500 text-white px-2 py-0.5 rounded-full hidden sm:inline-block">
-                                        Gemini 1.5 Flash
+                                        Gemini 3.6 Flash
                                     </span>
                                 </DialogTitle>
                                 <DialogDescription className="text-xs mt-0.5">Asistente de IA para facturación</DialogDescription>
