@@ -43,17 +43,42 @@ export default function AdminPage() {
 
   const handleLogout = async () => { await logout(); navigate('/'); };
 
-  const navItems = [
-    { id: 'dashboard' as AdminTab, label: 'Dashboard',       icon: LayoutDashboard },
-    { id: 'billing'   as AdminTab, label: 'Facturación',     icon: FileText },
-    { id: 'products'  as AdminTab, label: 'Productos',       icon: Package },
-    { id: 'orders'    as AdminTab, label: 'Pedidos',         icon: ShoppingCart },
-    { id: 'quotes'    as AdminTab, label: 'Cotizaciones',    icon: ClipboardList },
-    { id: 'home'      as AdminTab, label: 'Inicio',          icon: Home },
-    { id: 'nosotros'  as AdminTab, label: 'Nosotros',        icon: Users2 },
-    { id: 'blog'      as AdminTab, label: 'Blog',            icon: FileText },
-    { id: 'config'    as AdminTab, label: 'Configuración',   icon: Settings },
-    { id: 'perfil'    as AdminTab, label: 'Mi Perfil',       icon: UserCircle },
+  const navGroups = [
+    {
+      title: 'Resumen',
+      items: [
+        { id: 'dashboard' as AdminTab, label: 'Dashboard',       icon: LayoutDashboard },
+      ]
+    },
+    {
+      title: 'Ventas & Operaciones',
+      items: [
+        { id: 'orders'    as AdminTab, label: 'Pedidos',         icon: ShoppingCart },
+        { id: 'billing'   as AdminTab, label: 'Facturación',     icon: FileText },
+        { id: 'quotes'    as AdminTab, label: 'Cotizaciones',    icon: ClipboardList },
+      ]
+    },
+    {
+      title: 'Catálogo',
+      items: [
+        { id: 'products'  as AdminTab, label: 'Productos',       icon: Package },
+      ]
+    },
+    {
+      title: 'Contenido (Web)',
+      items: [
+        { id: 'home'      as AdminTab, label: 'Página Inicio',   icon: Home },
+        { id: 'nosotros'  as AdminTab, label: 'Página Nosotros', icon: Users2 },
+        { id: 'blog'      as AdminTab, label: 'Blog',            icon: FileText },
+      ]
+    },
+    {
+      title: 'Ajustes y Sistema',
+      items: [
+        { id: 'config'    as AdminTab, label: 'Configuración',   icon: Settings },
+        { id: 'perfil'    as AdminTab, label: 'Mi Perfil',       icon: UserCircle },
+      ]
+    }
   ];
 
   const TAB_TITLES: Record<AdminTab, string> = {
@@ -83,23 +108,32 @@ export default function AdminPage() {
             </Link>
           </div>
 
-          <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-            {navItems.map(item => (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                title={!sidebarOpen ? item.label : ''}
-                className={cn(
-                  'w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors',
-                  !sidebarOpen && 'justify-center',
-                  activeTab === item.id
-                    ? 'bg-sidebar-accent text-sidebar-primary'
-                    : 'text-sidebar-foreground hover:bg-sidebar-accent'
+          <nav className="flex-1 p-4 space-y-6 overflow-y-auto">
+            {navGroups.map((group, idx) => (
+              <div key={idx} className="space-y-1">
+                {sidebarOpen && (
+                  <h3 className="px-4 text-[10px] font-bold text-sidebar-foreground/40 uppercase tracking-widest mb-2 mt-2">
+                    {group.title}
+                  </h3>
                 )}
-              >
-                <item.icon className="h-5 w-5 shrink-0" />
-                {sidebarOpen && <span className="truncate">{item.label}</span>}
-              </button>
+                {group.items.map(item => (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveTab(item.id)}
+                    title={!sidebarOpen ? item.label : ''}
+                    className={cn(
+                      'w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-sm font-medium',
+                      !sidebarOpen && 'justify-center',
+                      activeTab === item.id
+                        ? 'bg-sidebar-accent text-sidebar-primary shadow-sm'
+                        : 'text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50'
+                    )}
+                  >
+                    <item.icon className="h-4 w-4 shrink-0" />
+                    {sidebarOpen && <span className="truncate">{item.label}</span>}
+                  </button>
+                ))}
+              </div>
             ))}
           </nav>
 
