@@ -136,7 +136,12 @@ export function AIChatBot() {
                 schedule: contactInfo.schedule,
                 email: contactInfo.email,
                 phone: contactInfo.phone,
-                products: products,
+                products: products.map(p => ({ 
+                    name: p.name, 
+                    category: p.category, 
+                    price: p.price, 
+                    slug: p.slug 
+                })),
             });
 
             const assistantMsg: DisplayMessage = {

@@ -33,9 +33,9 @@ export async function sendChatMessage(messages: ChatMessage[], storeContext: any
         if (data.error) throw new Error(data.error);
 
         return data.reply;
-    } catch (error) {
+    } catch (error: any) {
         console.error("AI Error:", error);
-        return "Lo siento, tuve un problema conectando con mi cerebro (IA). Por favor, contacta por WhatsApp mientras lo solucionan. 😅";
+        return `Lo siento, tuve un problema conectando con mi cerebro (IA). Error: ${error.message || String(error)}. Por favor, contacta por WhatsApp mientras lo solucionan. 😅`;
     }
 }
 
@@ -49,9 +49,9 @@ export async function chatForInvoice(userMessage: string, conversationHistory: C
         if (data.error) throw new Error(data.error);
 
         return data.reply;
-    } catch (error) {
+    } catch (error: any) {
         console.error("AI Error:", error);
-        return "Hubo un error al procesar tu solicitud. Por favor, inténtalo de nuevo.";
+        return `Hubo un error al procesar tu solicitud: ${error.message || String(error)}. Por favor, inténtalo de nuevo.`;
     }
 }
 
