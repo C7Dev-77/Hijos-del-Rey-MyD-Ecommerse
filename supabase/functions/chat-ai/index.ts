@@ -21,7 +21,8 @@ serve(async (req) => {
     const { action, payload } = await req.json();
 
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-    const MODEL_NAME = "gemini-3.6-flash";
+    // IMPORTANTE: El nombre correcto del modelo de Google es gemini-1.5-flash
+    const MODEL_NAME = "gemini-1.5-flash";
 
     if (action === "chat_invoice") {
       const { userMessage, conversationHistory } = payload;
@@ -98,8 +99,25 @@ FORMATO DE RESPUESTA (JSON estricto):
       const chat = model.startChat({ history: [] });
       const result = await chat.sendMessage([{ text: userMessage }]);
       const text = result.response.text();
-      const cleaned = text.replace(/^```json\s*/i, "").replace(/\s*```$/i, "").trim();
-      let parsed = JSON.parse(cleaned);
+      // Limpieza robusta del JSON: buscar siempre entre la primera { y la última }
+      let cleaned = text.trim();
+      const firstBrace = cleaned.indexOf('{');
+      const lastBrace = cleaned.lastIndexOf('}');
+      
+      if (firstBrace !== -1 && lastBrace !== -1) {
+          cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+      } else {
+          // Fallback por si acaso devolvió un formato muy raro, aunque debería haber llaves.
+          cleaned = cleaned.replace(/```json/gi, '').replace(/```/g, '').trim();
+      }
+      
+      let parsed;
+      try {
+          parsed = JSON.parse(cleaned);
+      } catch (parseError) {
+          console.error("Error parseando JSON de Gemini:", cleaned);
+          throw new Error("El modelo generó un JSON inválido. Intenta nuevamente.");
+      }
       
       if (!Array.isArray(parsed.items)) parsed.items = [];
       if (!parsed.confidence) parsed.confidence = "medium";
