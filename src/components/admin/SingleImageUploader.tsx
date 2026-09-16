@@ -68,7 +68,7 @@ export default function SingleImageUploader({
       const publicUrl = data.publicUrl;
 
       onChange(publicUrl);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error subiendo imagen de equipo:', err);
       setError('Error al subir. Intenta de nuevo.');
     } finally {

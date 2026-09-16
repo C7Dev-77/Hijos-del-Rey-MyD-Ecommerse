@@ -122,7 +122,7 @@ export function AIChatBot() {
         setInput('');
         setIsTyping(true);
 
-        // Preparar historial para Groq (últimos 10 mensajes para no exceder el contexto)
+        // Preparar historial para Gemini (últimos 10 mensajes para mantener el contexto)
         const chatHistory: ChatMessage[] = messages
             .filter((m) => m.id !== 'welcome')
             .slice(-10)
@@ -218,8 +218,8 @@ export function AIChatBot() {
             const trimmed = line.trim();
 
             // Línea de lista: empieza con • o -
-            if (/^[•\-]\s+/.test(trimmed)) {
-                bulletBuffer.push(trimmed.replace(/^[•\-]\s+/, ''));
+            if (/^[•-]\s+/.test(trimmed)) {
+                bulletBuffer.push(trimmed.replace(/^[•-]\s+/, ''));
                 continue;
             }
 

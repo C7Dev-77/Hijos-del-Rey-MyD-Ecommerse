@@ -33,7 +33,16 @@ const AdminPage = lazy(() => import("./pages/AdminPage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutos: los datos no se consideran obsoletos hasta pasar este tiempo
+      gcTime: 1000 * 60 * 30,    // 30 minutos: tiempo que permanecen en caché antes de ser eliminados
+      retry: 1,                // Solo reintenta una vez en caso de error
+      refetchOnWindowFocus: false, // Evita recargar datos cada vez que el usuario vuelve a la pestaña
+    },
+  },
+});
 
 // ── Loading Spinner ─────────────────────────────────────────────────
 function PageLoader() {
