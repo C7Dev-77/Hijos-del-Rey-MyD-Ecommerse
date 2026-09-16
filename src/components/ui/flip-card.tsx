@@ -5,6 +5,7 @@ import { Button } from './button';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useNavigate } from 'react-router-dom';
+import DOMPurify from 'dompurify';
 
 interface FlipCardProps {
   frontImage: string;
@@ -140,7 +141,7 @@ export function FlipCard({
               )}
             </DialogHeader>
             <div className="mt-4 prose prose-stone max-w-none">
-              <div dangerouslySetInnerHTML={{ __html: fullContent || backContent }} />
+              <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(fullContent || backContent) }} />
             </div>
           </DialogContent>
         </Dialog>

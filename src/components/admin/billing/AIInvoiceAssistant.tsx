@@ -6,7 +6,7 @@ import { Sparkles, Send, Bot, User, CheckCircle2, X, Loader2, ChevronRight, Aler
 import { useBillingClients } from "@/hooks/useBillingClients";
 import { useBillingProducts } from "@/hooks/useBillingProducts";
 import { useInvoices } from "@/hooks/useInvoices";
-import { parseInvoiceWithGemini, chatWithGemini, type AIInvoiceResult } from "@/lib/gemini";
+import { parseInvoiceWithAI, chatForInvoice, type AIInvoiceResult } from "@/lib/ai";
 import { toast } from "sonner";
 
 // ─── Utilidad de Moneda ──────────────────────────────────────────────────────
@@ -164,13 +164,13 @@ export function AIInvoiceAssistant({ open, onOpenChange }: AIInvoiceAssistantPro
     const { products } = useBillingProducts();
     const { createInvoice } = useInvoices();
 
-    const hasApiKey = !!import.meta.env.VITE_GROQ_API_KEY;
+    const hasApiKey = true; // Supabase Edge Function handles the key now
 
     const initialMessage: ChatMessage = {
         role: "assistant",
         content: hasApiKey
             ? "¡Hola! Soy **FacturaBot** 🤖, tu asistente de facturación con IA.\n\nDescríbeme la factura que necesitas crear y la generaré automáticamente.\n\n**Ejemplo:** *\"Factura para Empresa XYZ con 5 sillas ergonómicas y 2 escritorios\"*"
-            : "⚠️ **API Key de Groq no configurada**\n\nPara usar el asistente necesitas configurar tu clave de Groq en el archivo `.env`.",
+            : "⚠️ **Error de Conexión**\n\nNo se pudo contactar con la función de IA en Supabase.",
         isApiKeyError: !hasApiKey,
     };
 
@@ -219,7 +219,7 @@ export function AIInvoiceAssistant({ open, onOpenChange }: AIInvoiceAssistantPro
                 const geminiClients = clients.map(c => ({ id: c.id, name: c.name, nit: c.nit }));
                 const geminiProducts = products.map(p => ({ id: p.id, code: p.code, name: p.name, price: p.price, tax: p.tax }));
 
-                const result = await parseInvoiceWithGemini(userText, geminiClients, geminiProducts, conversationHistory);
+                const result = await parseInvoiceWithAI(userText, geminiClients, geminiProducts, conversationHistory);
                 parsedInvoice = result;
                 assistantContent = result.message;
 
@@ -227,7 +227,7 @@ export function AIInvoiceAssistant({ open, onOpenChange }: AIInvoiceAssistantPro
                     setPendingInvoice(result);
                 }
             } else {
-                assistantContent = await chatWithGemini(userText, conversationHistory);
+                assistantContent = await chatForInvoice(userText, conversationHistory);
             }
 
             const assistantMsg: ChatMessage = {
@@ -323,7 +323,7 @@ export function AIInvoiceAssistant({ open, onOpenChange }: AIInvoiceAssistantPro
                                 <DialogTitle className="text-base font-semibold flex items-center gap-2">
                                     FacturaBot
                                     <span className="text-xs font-normal bg-gradient-to-r from-violet-500 to-purple-500 text-white px-2 py-0.5 rounded-full hidden sm:inline-block">
-                                        Llama 3.3 · Groq
+                                        Gemini 3.8 Flash
                                     </span>
                                 </DialogTitle>
                                 <DialogDescription className="text-xs mt-0.5">Asistente de IA para facturación</DialogDescription>
@@ -395,7 +395,7 @@ export function AIInvoiceAssistant({ open, onOpenChange }: AIInvoiceAssistantPro
                         </div>
                     ) : (
                         <div className="text-center">
-                            <p className="text-xs text-muted-foreground mt-2">Configura la API Key VITE_GROQ_API_KEY en tu .env</p>
+                            <p className="text-xs text-muted-foreground mt-2">Error de conexión con la IA</p>
                         </div>
                     )}
                 </div>

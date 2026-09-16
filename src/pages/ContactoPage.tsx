@@ -59,8 +59,7 @@ export default function ContactoPage() {
   const onSubmit = async (data: ContactFormData) => {
     try {
       // Guardar en Dashboard de Cotizaciones automáticamente
-      addQuote({
-        id: Date.now().toString(),
+      await addQuote({
         userName: data.name,
         userEmail: data.email,
         userPhone: data.phone || 'No especificado',
@@ -69,7 +68,6 @@ export default function ContactoPage() {
         description: data.message,
         images: [],
         status: 'pending',
-        createdAt: new Date().toISOString()
       });
 
       // Guardar mensaje en Supabase

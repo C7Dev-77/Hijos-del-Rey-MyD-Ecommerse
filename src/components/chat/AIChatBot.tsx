@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { X, Send, Bot, User, Sparkles, Minimize2, RotateCcw } from 'lucide-react';
-import { sendChatMessage, type ChatMessage } from '@/lib/groq';
+import { sendChatMessage, type ChatMessage } from '@/lib/ai';
 import { useAdminStore } from '@/store/adminStore';
 
 interface DisplayMessage {

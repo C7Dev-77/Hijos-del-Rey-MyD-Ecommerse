@@ -121,6 +121,7 @@ interface AdminState {
   isLoadingBlog: boolean;
   isLoadingOrders: boolean;
   isLoadingSettings: boolean;
+  isLoadingQuotes: boolean;
 
   // Settings
   fetchSettings: () => Promise<void>;
@@ -150,9 +151,10 @@ interface AdminState {
 
   // Quotes (Cotizaciones)
   quotes: Quote[];
-  addQuote: (quote: Quote) => void;
-  updateQuoteStatus: (id: string, status: Quote['status']) => void;
-  deleteQuote: (id: string) => void;
+  fetchQuotes: () => Promise<void>;
+  addQuote: (quote: Omit<Quote, 'id' | 'createdAt'>) => Promise<Quote>;
+  updateQuoteStatus: (id: string, status: Quote['status']) => Promise<void>;
+  deleteQuote: (id: string) => Promise<void>;
 }
 
 const defaultContactInfo: ContactInfo = {
@@ -388,6 +390,42 @@ function mapSettingsFromDB(row: Record<string, unknown>) {
   };
 }
 
+function mapQuoteFromDB(row: Record<string, unknown>): Quote {
+  return {
+    id: row.id as string,
+    userName: row.user_name as string,
+    userEmail: row.user_email as string,
+    userPhone: row.user_phone as string,
+    userCity: row.user_city as string,
+    furnitureType: row.furniture_type as string,
+    width: row.width as string | undefined,
+    height: row.height as string | undefined,
+    depth: row.depth as string | undefined,
+    material: row.material as string | undefined,
+    description: row.description as string,
+    images: (row.images as string[]) || [],
+    status: row.status as Quote['status'],
+    createdAt: row.created_at as string,
+  };
+}
+
+function mapQuoteToDB(quote: Partial<Quote>): Record<string, unknown> {
+  return {
+    user_name: quote.userName,
+    user_email: quote.userEmail,
+    user_phone: quote.userPhone,
+    user_city: quote.userCity,
+    furniture_type: quote.furnitureType,
+    width: quote.width || null,
+    height: quote.height || null,
+    depth: quote.depth || null,
+    material: quote.material || null,
+    description: quote.description,
+    images: quote.images || [],
+    status: quote.status || 'pending',
+  };
+}
+
 export const useAdminStore = create<AdminState>()(
   persist(
     (set, get) => ({
@@ -402,6 +440,7 @@ export const useAdminStore = create<AdminState>()(
       isLoadingBlog: false,
       isLoadingOrders: false,
       isLoadingSettings: false,
+      isLoadingQuotes: false,
       orders: [],
       quotes: [],
 
@@ -756,32 +795,79 @@ export const useAdminStore = create<AdminState>()(
       },
 
       // ─── Quotes ────────────────────────────────────────────────
-      addQuote: (quote) =>
-        set((state) => ({
-          quotes: [quote, ...state.quotes],
-        })),
+      fetchQuotes: async () => {
+        set({ isLoadingQuotes: true });
+        const { data, error } = await supabase
+          .from('quotes')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-      updateQuoteStatus: (id, status) =>
+        if (error) {
+          console.error('Error fetching quotes:', error.message);
+          set({ isLoadingQuotes: false });
+          return;
+        }
+
+        set({ quotes: (data || []).map(mapQuoteFromDB), isLoadingQuotes: false });
+      },
+
+      addQuote: async (quote) => {
+        const { data, error } = await supabase
+          .from('quotes')
+          .insert(mapQuoteToDB(quote))
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error adding quote:', error.message);
+          throw new Error('No se pudo guardar la cotización: ' + error.message);
+        }
+
+        const newQuote = mapQuoteFromDB(data);
+        set((state) => ({ quotes: [newQuote, ...state.quotes] }));
+        return newQuote;
+      },
+
+      updateQuoteStatus: async (id, status) => {
+        const { error } = await supabase
+          .from('quotes')
+          .update({ status })
+          .eq('id', id);
+
+        if (error) {
+          console.error('Error updating quote status:', error.message);
+          throw new Error('No se pudo actualizar la cotización: ' + error.message);
+        }
+
         set((state) => ({
           quotes: state.quotes.map((q) => (q.id === id ? { ...q, status } : q)),
-        })),
+        }));
+      },
 
-      deleteQuote: (id) =>
+      deleteQuote: async (id) => {
+        const { error } = await supabase
+          .from('quotes')
+          .delete()
+          .eq('id', id);
+
+        if (error) {
+          console.error('Error deleting quote:', error.message);
+          throw new Error('No se pudo eliminar la cotización: ' + error.message);
+        }
+
         set((state) => ({
           quotes: state.quotes.filter((q) => q.id !== id),
-        })),
+        }));
+      },
     }),
     {
       name: 'myd-admin-store',
       partialize: (state) => ({
-        // Solo persistir cotizaciones (datos 100% locales sin fuente en Supabase)
-        // aboutPageContent, homePageContent, contactInfo y storeSettings se cargan
-        // SIEMPRE desde Supabase para que todos los navegadores vean lo mismo.
-        quotes: state.quotes,
+        // No persisting anything locally anymore! 
+        // Everything is sourced from Supabase.
       }),
       merge: (persistedState: any, currentState) => ({
         ...currentState,
-        quotes: persistedState?.quotes ?? currentState.quotes,
       }),
     }
   )

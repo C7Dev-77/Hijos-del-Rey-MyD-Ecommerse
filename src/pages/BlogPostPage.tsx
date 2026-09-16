@@ -7,6 +7,7 @@ import { CartDrawer } from '@/components/cart/CartDrawer';
 import { useAdminStore } from '@/store/adminStore';
 import { usePageSEO } from '@/hooks/useSEO';
 import { Button } from '@/components/ui/button';
+import DOMPurify from 'dompurify';
 
 export default function BlogPostPage() {
     const { slug } = useParams<{ slug: string }>();
@@ -107,7 +108,7 @@ export default function BlogPostPage() {
               prose-img:rounded-xl prose-img:shadow-lg
               prose-strong:text-charcoal prose-strong:font-semibold"
                     >
-                        <div dangerouslySetInnerHTML={{ __html: post.content }} />
+                        <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }} />
                     </motion.article>
 
                     {/* Related Articles or Call to Action could go here */}

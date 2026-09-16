@@ -19,7 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useAdminStore } from '@/store/adminStore';
-import { sendChatMessage } from '@/lib/groq';
+import { sendChatMessage } from '@/lib/ai';
 import { usePageSEO } from '@/hooks/useSEO';
 
 // ── Schemas de validación ─────────────────────────────────────────────────────
@@ -210,24 +210,27 @@ export default function CotizarPage() {
       }))
     );
 
-    const quoteId = `QT-${Math.floor(Math.random() * 1000000).toString().padStart(6, '0')}`;
-
-    useAdminStore.getState().addQuote({
-      id: quoteId,
-      userName: step1Data?.name || '',
-      userEmail: step1Data?.email || '',
-      userPhone: step1Data?.phone || '',
-      userCity: step1Data?.city || '',
-      furnitureType: step2Data?.furnitureType || '',
-      width: step2Data?.width,
-      height: step2Data?.height,
-      depth: step2Data?.depth,
-      material: step2Data?.material,
-      description: step2Data?.description || '',
-      images: base64Images,
-      status: 'pending',
-      createdAt: new Date().toLocaleDateString('es-CO'),
-    });
+    let quoteId = `QT-TEMP-${Math.floor(Math.random() * 1000).toString()}`;
+    
+    try {
+      const newQuote = await useAdminStore.getState().addQuote({
+        userName: step1Data?.name || '',
+        userEmail: step1Data?.email || '',
+        userPhone: step1Data?.phone || '',
+        userCity: step1Data?.city || '',
+        furnitureType: step2Data?.furnitureType || '',
+        width: step2Data?.width,
+        height: step2Data?.height,
+        depth: step2Data?.depth,
+        material: step2Data?.material,
+        description: step2Data?.description || '',
+        images: base64Images,
+        status: 'pending',
+      });
+      quoteId = newQuote.id.substring(0, 8).toUpperCase();
+    } catch (e) {
+      console.error("Error guardando cotización", e);
+    }
 
     // Usar \n en lugar de %0A, y encodear todo adecuadamente
     const messageRaw =
