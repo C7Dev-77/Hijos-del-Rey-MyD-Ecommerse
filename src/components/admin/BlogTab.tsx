@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Pencil, Trash2, Save } from 'lucide-react';
+import { Plus, Pencil, Trash2, Save, Sparkles, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
@@ -16,6 +17,7 @@ import {
 import { useAdminStore } from '@/store/adminStore';
 import { toast } from 'sonner';
 import type { BlogPost } from '@/types';
+import { BlogGenerator } from '@/components/admin/BlogGenerator';
 
 export function BlogTab() {
   const { blogPosts, addBlogPost, updateBlogPost, deleteBlogPost } = useAdminStore();
@@ -87,33 +89,52 @@ export function BlogTab() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-      <div className="flex justify-end mb-6">
-        <Button onClick={openAddDialog} className="bg-primary text-primary-foreground">
-          <Plus className="h-4 w-4 mr-2" /> Nuevo Artículo
-        </Button>
-      </div>
+      <Tabs defaultValue="articulos">
+        <TabsList className="mb-6">
+          <TabsTrigger value="articulos" className="flex items-center gap-2">
+            <List className="h-4 w-4" /> Artículos
+          </TabsTrigger>
+          <TabsTrigger value="generar" className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4" /> Generar con IA
+          </TabsTrigger>
+        </TabsList>
 
-      <div className="grid gap-4">
-        {blogPosts.map(post => (
-          <div key={post.id} className="bg-card border border-border rounded-xl p-4 flex gap-4">
-            <img src={post.image} alt={post.title} className="w-24 h-24 rounded-lg object-cover" />
-            <div className="flex-1">
-              <div className="flex items-start justify-between">
-                <div>
-                  <Badge variant="outline" className="mb-2">{post.category}</Badge>
-                  <h3 className="font-display font-semibold">{post.title}</h3>
-                  <p className="text-sm text-muted-foreground line-clamp-2">{post.excerpt}</p>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="ghost" size="icon" onClick={() => openEditDialog(post)}><Pencil className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" className="text-destructive" onClick={() => setDeleteId(post.id)}><Trash2 className="h-4 w-4" /></Button>
+        {/* ── Tab: Lista de Artículos ── */}
+        <TabsContent value="articulos">
+          <div className="flex justify-end mb-6">
+            <Button onClick={openAddDialog} className="bg-primary text-primary-foreground">
+              <Plus className="h-4 w-4 mr-2" /> Nuevo Artículo
+            </Button>
+          </div>
+
+          <div className="grid gap-4">
+            {blogPosts.map(post => (
+              <div key={post.id} className="bg-card border border-border rounded-xl p-4 flex gap-4">
+                <img src={post.image} alt={post.title} className="w-24 h-24 rounded-lg object-cover" />
+                <div className="flex-1">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <Badge variant="outline" className="mb-2">{post.category}</Badge>
+                      <h3 className="font-display font-semibold">{post.title}</h3>
+                      <p className="text-sm text-muted-foreground line-clamp-2">{post.excerpt}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="ghost" size="icon" onClick={() => openEditDialog(post)}><Pencil className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" className="text-destructive" onClick={() => setDeleteId(post.id)}><Trash2 className="h-4 w-4" /></Button>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">{post.author} • {post.readTime} min de lectura</p>
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">{post.author} • {post.readTime} min de lectura</p>
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </TabsContent>
+
+        {/* ── Tab: Generador IA ── */}
+        <TabsContent value="generar">
+          <BlogGenerator />
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
