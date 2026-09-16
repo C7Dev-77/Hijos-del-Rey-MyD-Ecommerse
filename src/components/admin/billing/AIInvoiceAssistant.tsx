@@ -179,7 +179,7 @@ export function AIInvoiceAssistant({ open, onOpenChange }: AIInvoiceAssistantPro
     const [isTyping, setIsTyping] = useState(false);
     const [pendingInvoice, setPendingInvoice] = useState<AIInvoiceResult | null>(null);
     const [creating, setCreating] = useState(false);
-    const [conversationHistory, setConversationHistory] = useState<{ role: string; content: string }[]>([]);
+    const [conversationHistory, setConversationHistory] = useState<{ role: "user" | "assistant" | "system"; content: string }[]>([]);
 
     const bottomRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -237,7 +237,7 @@ export function AIInvoiceAssistant({ open, onOpenChange }: AIInvoiceAssistantPro
             };
 
             setMessages((prev) => [...prev, assistantMsg]);
-            setConversationHistory([...newHistory, { role: "model", content: assistantContent }]);
+            setConversationHistory([...newHistory, { role: "assistant", content: assistantContent }]);
         } catch (err: unknown) {
             const errorObj = err instanceof Error ? err : new Error(String(err));
             console.error("Error:", errorObj);
