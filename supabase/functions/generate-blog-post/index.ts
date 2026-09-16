@@ -23,9 +23,17 @@ serve(async (req) => {
       )
     }
 
+    const apiKey = Deno.env.get('GEMINI_API_KEY')
+    if (!apiKey) {
+      return new Response(
+        JSON.stringify({ error: 'GEMINI_API_KEY no configurada en el servidor' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     // Inicializar Gemini
-    const genAI = new GoogleGenerativeAI(Deno.env.get('GEMINI_API_KEY') || '')
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' }) 
+    const genAI = new GoogleGenerativeAI(apiKey)
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
 
 
     const prompt = `

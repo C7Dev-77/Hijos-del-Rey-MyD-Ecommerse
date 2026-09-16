@@ -32,7 +32,13 @@ export function BlogGenerator() {
       const { data, error } = await supabase.functions.invoke('generate-blog-post', {
         body: { topic, tone, keywords },
       });
-      if (error) throw error;
+      if (error) {
+        // Extraer el mensaje real del cuerpo de error de la Edge Function
+        const errorBody = error.context ? await error.context.json().catch(() => null) : null;
+        const msg = errorBody?.error ?? error.message ?? 'Error desconocido';
+        throw new Error(msg);
+      }
+      if (!data || !data.title) throw new Error('La IA devolvió una respuesta vacía o inválida.');
       setGeneratedPost(data);
       toast.success('¡Artículo generado con éxito!');
     } catch (error: unknown) {
@@ -45,7 +51,7 @@ export function BlogGenerator() {
   const handleSavePost = async () => {
     if (!generatedPost) return;
     try {
-      const { error } = await supabase.from('posts').insert([{
+      const { error } = await supabase.from('blog_posts').insert([{
         title: generatedPost.title,
         slug: generatedPost.slug,
         excerpt: generatedPost.excerpt,
