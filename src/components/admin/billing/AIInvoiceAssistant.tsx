@@ -8,6 +8,7 @@ import { useBillingProducts } from "@/hooks/useBillingProducts";
 import { useInvoices } from "@/hooks/useInvoices";
 import { parseInvoiceWithAI, chatForInvoice, type AIInvoiceResult } from "@/lib/ai";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
 
 // ─── Utilidad de Moneda ──────────────────────────────────────────────────────
 const formatCurrencyCOP = (value: number) => {
@@ -142,7 +143,7 @@ function InvoicePreviewCard({
                 </p>
             )}
             <div className="flex gap-2 pt-1">
-                <Button size="sm" className="gap-1.5 flex-1 bg-gradient-to-br from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white" onClick={onConfirm} disabled={creating || !invoice.client_id}>
+                <Button size="sm" className="gap-1.5 flex-1 bg-gradient-to-br from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white" onClick={onConfirm} disabled={creating}>
                     {creating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                     {creating ? "Creando..." : "✅ Crear Factura"}
                 </Button>
@@ -151,8 +152,8 @@ function InvoicePreviewCard({
                     Cancelar
                 </Button>
             </div>
-            {!invoice.client_id && (
-                <p className="text-xs text-destructive">⚠️ No se identificó el cliente. Dile al asistente el nombre exacto del cliente registrado.</p>
+            {!invoice.client_id && invoice.client_name && (
+                <p className="text-xs text-amber-600">⚠️ Cliente nuevo: se creará automáticamente "{invoice.client_name}".</p>
             )}
         </div>
     );
@@ -160,8 +161,8 @@ function InvoicePreviewCard({
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 export function AIInvoiceAssistant({ open, onOpenChange }: AIInvoiceAssistantProps) {
-    const { clients } = useBillingClients();
-    const { products } = useBillingProducts();
+    const { clients, createClient } = useBillingClients();
+    const { products, createProduct } = useBillingProducts();
     const { createInvoice } = useInvoices();
 
     const hasApiKey = true; // Supabase Edge Function handles the key now
@@ -255,10 +256,7 @@ export function AIInvoiceAssistant({ open, onOpenChange }: AIInvoiceAssistantPro
     };
 
     const handleConfirmCreate = async () => {
-        if (!pendingInvoice?.client_id) {
-            toast.error("No hay cliente identificado para crear la factura");
-            return;
-        }
+        if (!pendingInvoice) return;
         if (pendingInvoice.items.length === 0) {
             toast.error("La factura debe tener al menos un ítem");
             return;
@@ -266,12 +264,58 @@ export function AIInvoiceAssistant({ open, onOpenChange }: AIInvoiceAssistantPro
 
         setCreating(true);
         try {
+            // ── 1. Crear cliente si no existe ──────────────────────────────
+            let clientId = pendingInvoice.client_id;
+            if (!clientId && pendingInvoice.client_name) {
+                toast.info(`Creando cliente "${pendingInvoice.client_name}"...`);
+                const { data: newClient, error: clientError } = await createClient({
+                    name: pendingInvoice.client_name,
+                    nit: "0",
+                    email: "",
+                    phone: "",
+                    address: "",
+                    city: "",
+                });
+                if (clientError) throw new Error("No se pudo crear el cliente: " + clientError.message);
+                clientId = newClient.id;
+            }
+            if (!clientId) {
+                toast.error("No se identificó el cliente. Indica el nombre completo.");
+                setCreating(false);
+                return;
+            }
+
+            // ── 2. Crear productos si no existen ───────────────────────────
+            const resolvedItems = await Promise.all(
+                pendingInvoice.items.map(async (item) => {
+                    if (item.product_id) return item; // ya existe en catálogo
+                    // Crear producto temporal
+                    const { data: newProd, error: prodError } = await createProduct({
+                        code: `TMP-${Date.now()}`,
+                        name: item.description,
+                        description: item.description,
+                        category: "Salas",
+                        price: item.unit_price || 0,
+                        tax: item.tax ?? 19,
+                        stock: 0,
+                        status: "active",
+                    });
+                    if (prodError) {
+                        // Si falla la creación del producto, continúa sin product_id
+                        console.warn("No se pudo crear producto temporal:", prodError);
+                        return { ...item, product_id: null };
+                    }
+                    return { ...item, product_id: newProd.id };
+                })
+            );
+
+            // ── 3. Crear la factura ─────────────────────────────────────────
             const { error } = await createInvoice({
-                client_id: pendingInvoice.client_id,
+                client_id: clientId,
                 date: new Date().toISOString(),
                 due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
                 notes: pendingInvoice.notes,
-                items: pendingInvoice.items.map(i => ({
+                items: resolvedItems.map(i => ({
                     product_id: i.product_id,
                     description: i.description,
                     quantity: i.quantity,
@@ -284,11 +328,11 @@ export function AIInvoiceAssistant({ open, onOpenChange }: AIInvoiceAssistantPro
 
             const successMsg: ChatMessage = {
                 role: "assistant",
-                content: "🎉 ¡Factura creada exitosamente!\n\nPuedes verla en la **lista de facturas**. Si necesitas editarla (por ejemplo ajustar precios), usa el menú de acciones ✏️.\n\n¿Necesitas crear otra factura?",
+                content: "🎉 ¡Factura creada exitosamente!\n\nPuedes verla en la **lista de facturas**. Si el cliente o algún producto fue creado automáticamente, puedes completar sus datos después desde el módulo correspondiente.\n\n¿Necesitas crear otra factura?",
             };
             setMessages((prev) => [...prev, successMsg]);
             setPendingInvoice(null);
-            toast.success("Factura creada");
+            toast.success("Factura creada exitosamente");
         } catch (err: unknown) {
             const errorObj = err instanceof Error ? err : new Error(String(err));
             toast.error("Error al crear la factura", { description: errorObj.message });
