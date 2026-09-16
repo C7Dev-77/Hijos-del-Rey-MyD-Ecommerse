@@ -70,7 +70,7 @@ export async function parseInvoiceWithAI(
         if (data.error) throw new Error(data.error);
 
         return data.parsed as AIInvoiceResult;
-    } catch (error) {
+    } catch (error: any) {
         console.error("FacturaBot Parse Error:", error);
         return {
             client_id: null,
@@ -78,7 +78,7 @@ export async function parseInvoiceWithAI(
             items: [],
             notes: "",
             confidence: 'low',
-            message: "Lo siento, no pude interpretar correctamente los datos de la factura. Por favor, sé más específico o genérala manualmente."
+            message: `Lo siento, hubo un error técnico procesando la factura: ${error.message || String(error)}. Por favor revisa la consola o inténtalo de nuevo.`
         };
     }
 }
