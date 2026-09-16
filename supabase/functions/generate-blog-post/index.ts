@@ -31,9 +31,12 @@ serve(async (req) => {
       )
     }
 
-    // Inicializar Gemini
     const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
+    // gemini-2.5-pro: mejor modelo disponible, máxima calidad para generación de contenido
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.5-pro',
+      generationConfig: { temperature: 0.8, maxOutputTokens: 4096 },
+    })
 
 
     const prompt = `

@@ -22,7 +22,7 @@ serve(async (req) => {
     const { action, payload } = await req.json();
 
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-    const MODEL_NAME = "gemini-3.6-flash"; // Modelo correcto para esta API key
+    const MODEL_NAME = "gemini-2.0-flash"; // Mejor modelo flash: velocidad + calidad
 
     // ─── CHAT NORMAL (asistente de facturación conversacional) ──────────────
     if (action === "chat_invoice") {
