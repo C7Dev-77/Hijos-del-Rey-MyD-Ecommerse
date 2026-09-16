@@ -24,21 +24,35 @@ export default function BlogPostPage() {
         image: post?.image || '',
     });
 
-    if (!post) {
-        return <Navigate to="/blog" replace />;
-    }
-
     const parsedHtml = useMemo(() => {
         if (!post?.content) return '';
         let markdown = post.content;
+
+        // Normalizar saltos de línea Windows
+        markdown = markdown.replace(/\r\n/g, '\n');
+
         // Si el contenido inicia con '# Titulo' que repite el título principal, se remueve para evitar duplicar el H1
         if (post.title) {
             const escaped = post.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             markdown = markdown.replace(new RegExp(`^#\\s*${escaped}\\s*\\n*`, 'i'), '');
         }
+
+        // Convertir viñetas unicode (•, ●, ○) en viñetas Markdown estándar (* )
+        markdown = markdown.replace(/^[ \t]*[•●○]\s+/gm, '* ');
+
+        // Convertir líneas cortas aisladas (subtítulos huérfanos sin ##) en subtítulos H2
+        markdown = markdown.replace(/(^|\n\n)([A-ZÁÉÍÓÚÑ0-9][^\n!?#]{2,85}[a-záéíóúñ0-9])(\n\n|$)/g, (match, p1, p2, p3) => {
+            if (p2.endsWith('.')) return match;
+            return `${p1}## ${p2}${p3}`;
+        });
+
         const rawHtml = marked.parse(markdown, { async: false, breaks: true }) as string;
         return DOMPurify.sanitize(rawHtml);
     }, [post?.content, post?.title]);
+
+    if (!post) {
+        return <Navigate to="/blog" replace />;
+    }
 
     const handleShare = () => {
         const url = window.location.href;
