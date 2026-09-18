@@ -259,8 +259,8 @@ export default function ProductoPage() {
                 {product.stock > 0 ? (
                   <div className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-forest" />
-                    <span className="text-sm text-forest">
-                      En stock ({product.stock} disponibles)
+                    <span className="text-sm text-forest font-medium">
+                      ✅ Entrega inmediata ({product.stock} disponibles)
                     </span>
                   </div>
                 ) : (
@@ -276,13 +276,13 @@ export default function ProductoPage() {
                       <div className="flex items-start gap-2">
                         <Wrench className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
                         <p className="text-sm text-amber-800 dark:text-amber-300 font-medium">
-                          Este mueble se <strong>fabrica a pedido</strong>. El tiempo de entrega es de <strong>7 días o más</strong> según el mueble y la cantidad solicitada.
+                          Este mueble se <strong>fabrica a pedido</strong>. El tiempo de entrega estimado es de <strong>{product.manufacturingTime || '7 días o más'}</strong>.
                         </p>
                       </div>
                       <div className="flex items-start gap-2">
                         <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
                         <p className="text-sm text-amber-800 dark:text-amber-300">
-                          Para confirmar el pedido se requiere un <strong>anticipo del 40%</strong> del valor total.
+                          Para confirmar el pedido se requiere un <strong>anticipo del {product.advancePercentage || 40}%</strong> del valor total.
                           El saldo restante se cancela al confirmar la entrega.
                         </p>
                       </div>
@@ -302,7 +302,7 @@ export default function ProductoPage() {
                   </button>
                   <span className="px-6 font-medium">{quantity}</span>
                   <button
-                    onClick={() => setQuantity(product.stock > 0 ? Math.min(product.stock, quantity + 1) : quantity + 1)}
+                    onClick={() => setQuantity(quantity + 1)}
                     className="p-3 hover:bg-muted transition-colors"
                   >
                     <Plus className="h-4 w-4" />
@@ -472,7 +472,7 @@ export default function ProductoPage() {
           <div>
             <p className="font-display text-lg font-bold">{formatPrice(product.price)}</p>
             {product.stock === 0 && (
-              <p className="text-xs text-amber-600 font-medium">7+ días · Anticipo 40%</p>
+              <p className="text-xs text-amber-600 font-medium">{product.manufacturingTime || '7+ días'} · Anticipo {product.advancePercentage || 40}%</p>
             )}
           </div>
           <Button

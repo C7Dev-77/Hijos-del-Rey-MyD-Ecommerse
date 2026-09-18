@@ -17,6 +17,7 @@ interface CartState {
   getTotal: () => number;
   getItemCount: () => number;
   hasPreOrderItems: () => boolean;
+  getAdvanceTotal: () => number;
 }
 
 export const useCartStore = create<CartState>()(
@@ -96,6 +97,15 @@ export const useCartStore = create<CartState>()(
 
       hasPreOrderItems: () => {
         return get().items.some(item => item.madeToOrder === true);
+      },
+
+      getAdvanceTotal: () => {
+        return get().items.reduce((total, item) => {
+          if (!item.madeToOrder) return total;
+          const price = item.product.price;
+          const percentage = item.product.advancePercentage || 40;
+          return total + ((price * item.quantity) * (percentage / 100));
+        }, 0);
       },
     }),
     {

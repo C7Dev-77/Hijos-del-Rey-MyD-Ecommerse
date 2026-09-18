@@ -7,7 +7,7 @@ import { useCartStore } from '@/store/cartStore';
 import { formatPrice } from '@/data/mock';
 
 export function CartDrawer() {
-  const { items, isOpen, closeCart, removeItem, updateQuantity, getTotal, clearCart, hasPreOrderItems } = useCartStore();
+  const { items, isOpen, closeCart, removeItem, updateQuantity, getTotal, clearCart, hasPreOrderItems, getAdvanceTotal } = useCartStore();
 
   return (
     <AnimatePresence>
@@ -100,7 +100,7 @@ export function CartDrawer() {
                             <div className="flex items-center gap-1 mt-1.5">
                               <Clock className="h-3 w-3 text-amber-600" />
                               <span className="text-xs text-amber-700 dark:text-amber-400 font-medium">
-                                Fabricar a pedido • 7+ días
+                                Fabricar a pedido • {item.product.manufacturingTime || '7+ días'}
                               </span>
                             </div>
                           )}
@@ -155,14 +155,14 @@ export function CartDrawer() {
                       <div className="flex items-center gap-2">
                         <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
                         <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
-                          Anticipo requerido (40%):
+                          Anticipo requerido:
                           <span className="ml-1 font-bold">
-                            {formatPrice(getTotal() * 0.4)}
+                            {formatPrice(getAdvanceTotal())}
                           </span>
                         </p>
                       </div>
                       <p className="text-xs text-amber-700 dark:text-amber-400 pl-6">
-                        Tu carrito incluye muebles por fabricar. Se cobrará el 40% al pagar y el resto al entregar.
+                        Tu carrito incluye muebles por fabricar. Se cobrará el anticipo al pagar y el resto al entregar.
                       </p>
                     </div>
                   )}

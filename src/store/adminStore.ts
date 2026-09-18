@@ -275,6 +275,8 @@ function mapProductFromDB(row: Record<string, unknown>): Product {
     reviewCount: (row.review_count as number) || 0,
     salesCount: 0, // sales_count column not in DB, default to 0
     createdAt: row.created_at as string,
+    manufacturingTime: row.manufacturing_time as Product['manufacturingTime'],
+    advancePercentage: row.advance_percentage as number | undefined,
   };
 }
 
@@ -305,6 +307,8 @@ function mapProductToDB(product: Product): Record<string, unknown> {
     rating: product.rating,
     review_count: product.reviewCount,
     // sales_count omitted: column does not exist in Supabase products table
+    manufacturing_time: product.manufacturingTime || null,
+    advance_percentage: product.advancePercentage || null,
   };
 }
 

@@ -49,6 +49,10 @@ export interface Product {
   reviewCount: number;
   salesCount?: number;
   createdAt: string;
+
+  // Fabricación a pedido
+  manufacturingTime?: '7 días' | '15 días' | '30 días' | '+30 días';
+  advancePercentage?: number;
 }
 
 export interface Category {

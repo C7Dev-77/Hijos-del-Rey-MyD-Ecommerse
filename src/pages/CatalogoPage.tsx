@@ -119,7 +119,7 @@ const FiltersContent = ({
           checked={inStockOnly}
           onCheckedChange={(checked) => setInStockOnly(checked as boolean)}
         />
-        <span className="text-sm">Solo productos en stock</span>
+        <span className="text-sm">Solo entrega inmediata</span>
       </label>
     </div>
 

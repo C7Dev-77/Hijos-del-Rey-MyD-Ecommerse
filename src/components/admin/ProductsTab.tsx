@@ -35,6 +35,7 @@ export function ProductsTab() {
     name: '', price: '', originalPrice: '', discount: '', stock: '',
     category: '', shortDescription: '', description: '', technicalDetails: '',
     dimWidth: '', dimHeight: '', dimDepth: '', materials: '', salesCount: '',
+    manufacturingTime: '', advancePercentage: '40',
   });
 
   const filteredProducts = products.filter(p =>
@@ -42,7 +43,7 @@ export function ProductsTab() {
   );
 
   const resetForm = () => {
-    setFormData({ name: '', price: '', originalPrice: '', discount: '', stock: '', category: '', shortDescription: '', description: '', technicalDetails: '', dimWidth: '', dimHeight: '', dimDepth: '', materials: '', salesCount: '' });
+    setFormData({ name: '', price: '', originalPrice: '', discount: '', stock: '', category: '', shortDescription: '', description: '', technicalDetails: '', dimWidth: '', dimHeight: '', dimDepth: '', materials: '', salesCount: '', manufacturingTime: '', advancePercentage: '40' });
     setUploadedImages([]);
     setEditingProduct(null);
   };
@@ -64,6 +65,8 @@ export function ProductsTab() {
       dimDepth: product.dimensions?.depth?.toString() || '',
       materials: product.materials?.join(', ') || '',
       salesCount: product.salesCount?.toString() || '0',
+      manufacturingTime: product.manufacturingTime || '',
+      advancePercentage: product.advancePercentage?.toString() || '40',
     });
     setIsDialogOpen(true);
   };
@@ -98,6 +101,8 @@ export function ProductsTab() {
       reviewCount: editingProduct?.reviewCount || 0,
       salesCount: parseInt(formData.salesCount) || 0,
       createdAt: editingProduct?.createdAt || new Date().toISOString().split('T')[0],
+      manufacturingTime: formData.manufacturingTime as Product['manufacturingTime'] || undefined,
+      advancePercentage: parseInt(formData.advancePercentage) || 40,
     };
 
     try {
@@ -218,6 +223,24 @@ export function ProductsTab() {
               <div className="space-y-2"><Label>Ventas (contador)</Label><Input type="number" value={formData.salesCount} onChange={(e) => setFormData({ ...formData, salesCount: e.target.value })} placeholder="Ej: 15" /></div>
               <div className="space-y-2"><Label>Precio Original (opcional)</Label><Input type="number" value={formData.originalPrice} onChange={(e) => setFormData({ ...formData, originalPrice: e.target.value })} placeholder="Ej: 2500000" /></div>
               <div className="space-y-2"><Label>Descuento (%)</Label><Input type="number" min="0" max="100" value={formData.discount} onChange={(e) => setFormData({ ...formData, discount: e.target.value })} placeholder="Ej: 15" /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Tiempo Fabricación</Label>
+                <Select value={formData.manufacturingTime} onValueChange={(v) => setFormData({ ...formData, manufacturingTime: v })}>
+                  <SelectTrigger><SelectValue placeholder="Sin asignar (solo stock)" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="7 días">7 días</SelectItem>
+                    <SelectItem value="15 días">15 días</SelectItem>
+                    <SelectItem value="30 días">30 días</SelectItem>
+                    <SelectItem value="+30 días">+30 días</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Anticipo (%)</Label>
+                <Input type="number" min="0" max="100" value={formData.advancePercentage} onChange={(e) => setFormData({ ...formData, advancePercentage: e.target.value })} placeholder="Ej: 40" />
+              </div>
             </div>
             <div className="space-y-2"><Label>Descripción Corta</Label><Input value={formData.shortDescription} onChange={(e) => setFormData({ ...formData, shortDescription: e.target.value })} /></div>
             <div className="space-y-2"><Label>Descripción Completa</Label><Textarea rows={4} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} /></div>

@@ -66,10 +66,14 @@ export const ProductCard = forwardRef<HTMLDivElement, ProductCardProps>(({ produ
                   Top Ventas
                 </Badge>
               )}
-              {product.stock === 0 && (
+              {product.stock === 0 ? (
                 <Badge className="bg-amber-600 text-white flex items-center gap-1">
                   <Clock className="h-3 w-3" />
-                  Bajo pedido
+                  🏭 Fabricación a pedido
+                </Badge>
+              ) : (
+                <Badge className="bg-forest text-cream flex items-center gap-1">
+                  ⚡ Entrega inmediata
                 </Badge>
               )}
             </div>
