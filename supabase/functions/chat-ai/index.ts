@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const MODEL_NAME = "gemini-2.0-flash"; // gemini-2.0-flash: estable, rápido y confirmado
+const MODEL_NAME = "gemini-2.5-flash"; // Modelo estable y rápido
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1200; // espera base entre reintentos
 
