@@ -100,8 +100,8 @@ export function AIChatBot() {
         sessionStorage.removeItem(SESSION_KEY);
     };
 
-    const handleSend = async () => {
-        const trimmed = input.trim();
+    const handleSend = async (overrideText?: string) => {
+        const trimmed = (overrideText ?? input).trim();
         if (!trimmed || isTyping) return;
 
         // Rate limiting
@@ -420,10 +420,7 @@ export function AIChatBot() {
                                         key={suggestion}
                                         onClick={() => {
                                             setInput(suggestion);
-                                            setTimeout(() => {
-                                                setInput(suggestion);
-                                                handleSend();
-                                            }, 50);
+                                            handleSend(suggestion);
                                         }}
                                         className="whitespace-nowrap text-xs px-3 py-1.5 rounded-full border border-gold/30 text-charcoal/70 hover:bg-gold/10 hover:border-gold/50 transition-all"
                                     >
