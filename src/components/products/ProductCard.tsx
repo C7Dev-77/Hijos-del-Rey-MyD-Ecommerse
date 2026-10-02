@@ -1,10 +1,11 @@
 import { forwardRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ShoppingCart, Heart, Eye, Clock } from 'lucide-react';
+import { ShoppingCart, Heart, Eye, Clock, Check } from 'lucide-react';
 import { Product, formatPrice, CATEGORIES } from '@/data/mock';
 import { useCartStore } from '@/store/cartStore';
 import { useWishlistStore } from '@/store/wishlistStore';
+import { useAdminStore } from '@/store/adminStore';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -49,33 +50,59 @@ export const ProductCard = forwardRef<HTMLDivElement, ProductCardProps>(({ produ
             {/* Overlay */}
             <div className="absolute inset-0 bg-charcoal/0 group-hover:bg-charcoal/30 transition-colors duration-300" />
 
-            {/* Badges */}
+            {/* Single Badge (Priority: Discount > BestSeller > New > Made to Order > In Stock) */}
             <div className="absolute top-3 left-3 flex flex-col gap-2">
-              {product.discount && (
-                <Badge className="bg-accent text-accent-foreground">
-                  -{product.discount}%
-                </Badge>
-              )}
-              {product.newArrival && (
-                <Badge className="bg-forest text-cream">
-                  Nuevo
-                </Badge>
-              )}
-              {product.bestSeller && (
-                <Badge className="bg-gold text-charcoal">
-                  Top Ventas
-                </Badge>
-              )}
-              {product.stock === 0 ? (
-                <Badge className="bg-amber-600 text-white flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  🏭 Fabricación a pedido
-                </Badge>
-              ) : (
-                <Badge className="bg-forest text-cream flex items-center gap-1">
-                  ⚡ Entrega inmediata
-                </Badge>
-              )}
+              {(() => {
+                // 1. Descuento
+                if (product.discount) {
+                  return (
+                    <Badge className="bg-accent text-accent-foreground">
+                      Descuento -{product.discount}%
+                    </Badge>
+                  );
+                }
+                
+                // 2. Más Vendido
+                if (product.bestSeller) {
+                  return (
+                    <Badge className="bg-gold text-charcoal">
+                      Más Vendido
+                    </Badge>
+                  );
+                }
+
+                // 3. Nuevo (ya sea manual o por ser de los 5 más recientes)
+                const isRecent = useAdminStore.getState().products
+                  .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+                  .slice(0, 5)
+                  .some(p => p.id === product.id);
+
+                if (product.newArrival || isRecent) {
+                  return (
+                    <Badge className="bg-forest text-cream">
+                      Nuevo
+                    </Badge>
+                  );
+                }
+
+                // 4. Fabricación a pedido (Sin stock)
+                if (product.stock === 0) {
+                  return (
+                    <Badge className="bg-amber-600 text-white flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      Fabricación
+                    </Badge>
+                  );
+                }
+
+                // 5. Entrega Inmediata (Con stock)
+                return (
+                  <Badge className="bg-forest/90 text-cream flex items-center gap-1">
+                    <Check className="h-3 w-3" />
+                    Inmediata
+                  </Badge>
+                );
+              })()}
             </div>
 
             {/* Quick Actions */}

@@ -264,29 +264,11 @@ export default function ProductoPage() {
                     </span>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-amber-600" />
-                      <span className="text-sm font-semibold text-amber-700 dark:text-amber-400">
-                        No disponible para entrega inmediata
-                      </span>
-                    </div>
-                    {/* Panel informativo de fabricación */}
-                    <div className="rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700 p-4 space-y-2">
-                      <div className="flex items-start gap-2">
-                        <Wrench className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
-                        <p className="text-sm text-amber-800 dark:text-amber-300 font-medium">
-                          Este mueble se <strong>fabrica a pedido</strong>. El tiempo de entrega estimado es de <strong>{product.manufacturingTime || '7 días o más'}</strong>.
-                        </p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
-                        <p className="text-sm text-amber-800 dark:text-amber-300">
-                          Para confirmar el pedido se requiere un <strong>anticipo del {product.advancePercentage || 40}%</strong> del valor total.
-                          El saldo restante se cancela al confirmar la entrega.
-                        </p>
-                      </div>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-amber-600" />
+                    <span className="text-sm font-semibold text-amber-700 dark:text-amber-400">
+                      No disponible para entrega inmediata
+                    </span>
                   </div>
                 )}
               </div>
@@ -319,11 +301,7 @@ export default function ProductoPage() {
                   )}
                   onClick={handleAddToCart}
                 >
-                  {product.stock === 0 ? (
-                    <><Wrench className="mr-2 h-5 w-5" />Fabricar a Pedido</>
-                  ) : (
-                    <><ShoppingCart className="mr-2 h-5 w-5" />Añadir al Carrito</>
-                  )}
+                  <ShoppingCart className="mr-2 h-5 w-5" />Añadir al Carrito
                 </Button>
 
                 <Button
@@ -346,6 +324,7 @@ export default function ProductoPage() {
                   <Heart className={cn("h-5 w-5", product && isInWishlist(product.id) && "fill-current")} />
                 </Button>
               </div>
+
 
               {/* Benefits */}
               <div className="grid grid-cols-3 gap-4 py-6 border-y border-border">

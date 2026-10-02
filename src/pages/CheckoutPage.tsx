@@ -44,6 +44,7 @@ type CheckoutFormData = z.infer<typeof checkoutSchema>;
 export default function CheckoutPage() {
   const [deliveryMethod, setDeliveryMethod] = useState<'domicilio' | 'agencia'>('domicilio');
   const [paymentMethod, setPaymentMethod] = useState<'transferencia' | 'nequi'>('transferencia');
+  const [paymentMode, setPaymentMode] = useState<'100' | '40'>('100');
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
@@ -112,9 +113,19 @@ export default function CheckoutPage() {
       msj += `${index + 1}. ${item.product.name} (x${item.quantity}) - ${formatPrice(item.product.price * item.quantity)}\n`;
     });
 
-    msj += `\n- Subtotal: ${formatPrice(subtotal)}\n`;
-    msj += `- Envío: ${shipping === 0 ? 'Gratis' : formatPrice(shipping)}\n`;
-    msj += `*💰 TOTAL: ${formatPrice(total)}*\n\n`;
+    msj += `\n💰 *RESUMEN FINANCIERO*\n`;
+    msj += `• Total de los muebles: ${formatPrice(subtotal)}\n`;
+    msj += `• Envío: ${shipping === 0 ? 'Pendiente/Por confirmar' : formatPrice(shipping)}\n`;
+    msj += `• Total del pedido: ${formatPrice(total)}\n\n`;
+
+    if (paymentMode === '40') {
+      msj += `💳 *MODALIDAD: ANTICIPO (40%)*\n`;
+      msj += `• *A CANCELAR AHORA: ${formatPrice(total * 0.40)}*\n`;
+      msj += `• Saldo pendiente a contra entrega: ${formatPrice(total * 0.60)}\n\n`;
+    } else {
+      msj += `💳 *MODALIDAD: PAGO TOTAL (100%)*\n`;
+      msj += `• *A CANCELAR AHORA: ${formatPrice(total)}*\n\n`;
+    }
 
     msj += `Quedo atento(a) para confirmar la disponibilidad y realizar el pago. ¡Gracias! ✨`;
 
@@ -428,6 +439,20 @@ export default function CheckoutPage() {
                   ))}
                 </div>
 
+                <div className="mb-6 space-y-2">
+                  <label className="text-sm font-semibold text-charcoal block">
+                    Modalidad de Pago
+                  </label>
+                  <select
+                    value={paymentMode}
+                    onChange={(e) => setPaymentMode(e.target.value as '100' | '40')}
+                    className="w-full flex h-12 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    <option value="100">Pagar el total ahora (100%)</option>
+                    <option value="40">Pagar anticipo para fabricación (40%)</option>
+                  </select>
+                </div>
+
                 <div className="bg-cream p-4 rounded-xl space-y-3 mb-6">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Subtotal Muebles</span>
@@ -437,15 +462,29 @@ export default function CheckoutPage() {
                     <span className="text-muted-foreground">Costo de Envío</span>
                     <span className="font-medium">
                       {shipping === 0 ? (
-                        <span className="text-forest bg-forest/10 px-2 py-0.5 rounded-md">Gratis/Pendiente</span>
+                        <span className="text-forest bg-forest/10 px-2 py-0.5 rounded-md">Por Confirmar</span>
                       ) : (
                         <span className="text-charcoal">{formatPrice(shipping)}</span>
                       )}
                     </span>
                   </div>
                   <div className="pt-3 border-t border-border flex justify-between font-display text-xl font-bold text-charcoal">
-                    <span>Total Estimado</span>
-                    <span className="text-primary">{formatPrice(total)}</span>
+                    <span>Total General</span>
+                    <span>{formatPrice(total)}</span>
+                  </div>
+
+                  <div className="pt-3 mt-3 border-t border-border">
+                    <div className="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm border border-amber-200">
+                      <span className="font-bold text-charcoal">A pagar HOY:</span>
+                      <span className="font-display text-xl font-bold text-primary">
+                        {paymentMode === '40' ? formatPrice(total * 0.40) : formatPrice(total)}
+                      </span>
+                    </div>
+                    {paymentMode === '40' && (
+                      <div className="text-right text-xs text-muted-foreground mt-2 px-1">
+                        Saldo de {formatPrice(total * 0.60)} a contra entrega
+                      </div>
+                    )}
                   </div>
                 </div>
 

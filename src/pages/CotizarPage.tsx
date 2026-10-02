@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
@@ -19,7 +19,8 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useAdminStore } from '@/store/adminStore';
-import { sendChatMessage } from '@/lib/ai';
+import { supabase } from '@/lib/supabase';
+import { sendChatMessage, AIRateLimitError } from '@/lib/ai';
 import { usePageSEO } from '@/hooks/useSEO';
 
 // ── Schemas de validación ─────────────────────────────────────────────────────
@@ -115,8 +116,16 @@ export default function CotizarPage() {
   const [step1Data, setStep1Data] = useState<Step1Data | null>(null);
   const [step2Data, setStep2Data] = useState<Step2Data | null>(null);
   const [uploadedImages, setUploadedImages] = useState<File[]>([]);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);   // URLs gestionadas con cleanup
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [styleSelected, setStyleSelected] = useState('');
+
+  // Generar object URLs y revocarlas al cambiar o al desmontar (fix memory leak)
+  useEffect(() => {
+    const urls = uploadedImages.map(f => URL.createObjectURL(f));
+    setImageUrls(urls);
+    return () => urls.forEach(u => URL.revokeObjectURL(u));
+  }, [uploadedImages]);
 
   // IA assistant state
   const [aiMessages, setAiMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
@@ -145,9 +154,9 @@ export default function CotizarPage() {
   ];
 
   // ── IA Assistant ─────────────────────────────────────────────────────────
-  const handleAiSend = async () => {
-    if (!aiInput.trim() || isAiLoading) return;
-    const userMsg = aiInput.trim();
+  const handleAiSend = async (overrideText?: string) => {
+    const userMsg = (overrideText ?? aiInput).trim();
+    if (!userMsg || isAiLoading) return;
     setAiInput('');
     setAiMessages(prev => [...prev, { role: 'user', content: userMsg }]);
     setIsAiLoading(true);
@@ -159,7 +168,8 @@ export default function CotizarPage() {
         : 'El cliente está llenando el formulario de cotización de muebles a medida.';
 
       const history = [
-        ...aiMessages,
+        // Limitar a últimos 8 mensajes para no superar el límite de tokens
+        ...aiMessages.slice(-8),
         {
           role: 'user' as const,
           content: `[Contexto: ${contextMessage}] ${userMsg}`
@@ -175,20 +185,22 @@ export default function CotizarPage() {
       });
 
       setAiMessages(prev => [...prev, { role: 'assistant', content: reply }]);
-    } catch {
-      setAiMessages(prev => [...prev, {
-        role: 'assistant',
-        content: 'Lo siento, tuve un problema. Pregunta directamente en WhatsApp: ' + contactInfo.whatsapp
-      }]);
+    } catch (err) {
+      const errorContent = err instanceof AIRateLimitError
+        ? `⏳ El asistente está muy solicitado. Intenta de nuevo en **${err.retryAfterSeconds}s**.\n\nO escríbenos directamente: ${contactInfo.whatsapp}`
+        : 'Lo siento, tuve un problema de conexión. Pregunta directamente en WhatsApp: ' + contactInfo.whatsapp;
+      setAiMessages(prev => [...prev, { role: 'assistant', content: errorContent }]);
     } finally {
       setIsAiLoading(false);
       setTimeout(() => aiMessagesEnd.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     }
   };
 
-  const askAiSuggestion = async (prompt: string) => {
-    setAiInput(prompt);
-    await handleAiSend();
+  const askAiSuggestion = (prompt: string) => {
+    // Fix race condition: pasar el texto directamente como overrideText
+    // en lugar de depender de setAiInput (asíncrono) + handleAiSend
+    setAiExpanded(true);
+    handleAiSend(prompt);
   };
 
   // ── Form handlers ─────────────────────────────────────────────────────────
@@ -197,21 +209,72 @@ export default function CotizarPage() {
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    setUploadedImages(prev => [...prev, ...files].slice(0, 5));
+    
+    // Validación de archivos: máximo 5MB y solo imágenes
+    const validFiles = files.filter(file => {
+      if (!file.type.startsWith('image/')) {
+        toast({ title: 'Archivo inválido', description: `El archivo ${file.name} no es una imagen.`, variant: 'destructive' });
+        return false;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast({ title: 'Archivo muy grande', description: `La imagen ${file.name} supera los 5MB.`, variant: 'destructive' });
+        return false;
+      }
+      return true;
+    });
+
+    if (validFiles.length > 0) {
+      setUploadedImages(prev => [...prev, ...validFiles].slice(0, 5));
+    }
+    // Limpiar el input para permitir subir el mismo archivo de nuevo si se borró
+    e.target.value = '';
   };
 
   const handleFinalSubmit = async () => {
     setIsSubmitting(true);
-    const base64Images = await Promise.all(
-      uploadedImages.map(file => new Promise<string>(resolve => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.readAsDataURL(file);
-      }))
+
+    // ── 1. Subir imágenes a Supabase Storage ─────────────────────────────────
+    const imageUrls: string[] = [];
+    const base64Fallback: string[] = [];   // fallback si Storage falla
+
+    await Promise.all(
+      uploadedImages.map(async (file, idx) => {
+        try {
+          // Nombre único: quoteId-timestamp-index.ext
+          const ext = file.name.split('.').pop() ?? 'jpg';
+          const path = `quotes/${Date.now()}-${idx}.${ext}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from('quote-images')
+            .upload(path, file, { upsert: false, contentType: file.type });
+
+          if (uploadError) throw uploadError;
+
+          const { data: urlData } = supabase.storage
+            .from('quote-images')
+            .getPublicUrl(path);
+
+          imageUrls.push(urlData.publicUrl);
+        } catch (err) {
+          console.warn(`Error subiendo imagen ${idx}:`, err);
+          // Fallback: guardar base64 si Storage falla
+          const b64 = await new Promise<string>(resolve => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(file);
+          });
+          base64Fallback.push(b64);
+        }
+      })
     );
 
-    let quoteId = `QT-TEMP-${Math.floor(Math.random() * 1000).toString()}`;
-    
+    // Usar URLs de Storage si se subieron, o base64 como último recurso
+    const imagesToSave = imageUrls.length > 0 ? imageUrls : base64Fallback;
+
+    // ── 2. Guardar cotización en Supabase ─────────────────────────────────────
+    // Fallback robusto: UUID local en vez de número aleatorio de 3 dígitos
+    let quoteId = `QT-${crypto.randomUUID().substring(0, 8).toUpperCase()}`;
+
     try {
       const newQuote = await useAdminStore.getState().addQuote({
         userName: step1Data?.name || '',
@@ -224,15 +287,21 @@ export default function CotizarPage() {
         depth: step2Data?.depth,
         material: step2Data?.material,
         description: step2Data?.description || '',
-        images: base64Images,
+        images: imagesToSave,
         status: 'pending',
       });
       quoteId = newQuote.id.substring(0, 8).toUpperCase();
     } catch (e) {
-      console.error("Error guardando cotización", e);
+      console.error('Error guardando cotización', e);
     }
 
-    // Usar \n en lugar de %0A, y encodear todo adecuadamente
+    // ── 3. Construir mensaje de WhatsApp con URLs de imágenes ─────────────────
+    const imageSection = imageUrls.length > 0
+      ? `📷 *Imágenes de referencia (${imageUrls.length}):*\n${imageUrls.map((url, i) => `• Imagen ${i + 1}: ${url}`).join('\n')}`
+      : uploadedImages.length > 0
+        ? `📷 Imágenes: ${uploadedImages.length} archivo(s) — ver en panel admin`
+        : '📷 Sin imágenes de referencia';
+
     const messageRaw =
       `¡Hola M&D Hijos del Rey! 👋\n\n` +
       `Solicito cotización (Ref: ${quoteId}):\n\n` +
@@ -246,18 +315,15 @@ export default function CotizarPage() {
       `${step2Data?.material ? `• Material: ${step2Data.material}\n` : ''}` +
       `${styleSelected ? `• Estilo: ${styleSelected}\n` : ''}` +
       `• Idea: ${step2Data?.description}\n\n` +
-      `📷 Imágenes adjuntas: ${uploadedImages.length > 0 ? `${uploadedImages.length} imagen(es) compartida(s) en la web` : 'Sin imágenes'}`;
+      imageSection;
 
     const phone = contactInfo.whatsapp.replace(/\D/g, '') || '573001234567';
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(messageRaw)}`, '_blank');
 
     toast({ title: '🎉 ¡Redirigiendo a WhatsApp!', description: 'Envía el mensaje pre-escrito para continuar.' });
     setIsSubmitting(false);
-
-    // Enviar al paso de "Éxito"
     setCurrentStep(5);
 
-    // Limpiar los datos en el fondo (opcional) pero dejamos un rato antes de limpiar por si el usuario vuelve
     setTimeout(() => {
       setStep1Data(null); setStep2Data(null);
       setUploadedImages([]); setStyleSelected('');
@@ -562,7 +628,7 @@ export default function CotizarPage() {
                       <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 mb-6">
                         {uploadedImages.map((file, index) => (
                           <div key={index} className="relative group aspect-square">
-                            <img src={URL.createObjectURL(file)} alt={`Ref ${index + 1}`} className="w-full h-full object-cover rounded-xl" />
+                            <img src={imageUrls[index]} alt={`Ref ${index + 1}`} className="w-full h-full object-cover rounded-xl" />
                             <button onClick={() => setUploadedImages(prev => prev.filter((_, i) => i !== index))}
                               className="absolute top-1.5 right-1.5 w-6 h-6 bg-destructive text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md">
                               <X className="h-3.5 w-3.5" />
@@ -633,7 +699,7 @@ export default function CotizarPage() {
                           </h3>
                           <div className="flex gap-2 flex-wrap">
                             {uploadedImages.map((file, i) => (
-                              <img key={i} src={URL.createObjectURL(file)} alt={`Ref ${i + 1}`} className="w-16 h-16 object-cover rounded-lg" />
+                              <img key={i} src={imageUrls[i]} alt={`Ref ${i + 1}`} className="w-16 h-16 object-cover rounded-lg" />
                             ))}
                           </div>
                         </div>
@@ -765,7 +831,7 @@ export default function CotizarPage() {
                       '¿Pueden hacer envíos a todo Colombia?',
                       '¿Puedo ver diseños antes de aprobar?',
                     ].map(q => (
-                      <button key={q} onClick={() => { setAiInput(q); setAiExpanded(true); }}
+                      <button key={q} onClick={() => askAiSuggestion(q)}
                         className="w-full text-left text-xs text-muted-foreground hover:text-primary px-3 py-2 rounded-lg hover:bg-muted/50 transition-colors border border-transparent hover:border-border">
                         {q}
                       </button>

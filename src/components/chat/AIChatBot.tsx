@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { X, Send, Bot, User, Sparkles, Minimize2, RotateCcw } from 'lucide-react';
-import { sendChatMessage, type ChatMessage } from '@/lib/ai';
+import { sendChatMessage, type ChatMessage, AIRateLimitError } from '@/lib/ai';
 import { useAdminStore } from '@/store/adminStore';
 
 interface DisplayMessage {
@@ -52,6 +52,10 @@ export function AIChatBot() {
     const [isTyping, setIsTyping] = useState(false);
     const [hasNewMessage, setHasNewMessage] = useState(false);
     const [lastSentAt, setLastSentAt] = useState(0);
+    // Estado de error diferenciado
+    const [rateLimitUntil, setRateLimitUntil] = useState(0);   // timestamp hasta cuando está bloqueado
+    const [retryCountdown, setRetryCountdown] = useState(0);   // segundos restantes para mostrar en UI
+    const [hasServiceError, setHasServiceError] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -95,6 +99,22 @@ export function AIChatBot() {
         return () => document.removeEventListener('keydown', handleEsc);
     }, [isOpen]);
 
+    // Countdown de backoff cuando hay rate limit
+    useEffect(() => {
+        if (rateLimitUntil <= 0) return;
+        const tick = setInterval(() => {
+            const remaining = Math.ceil((rateLimitUntil - Date.now()) / 1000);
+            if (remaining <= 0) {
+                setRetryCountdown(0);
+                setRateLimitUntil(0);
+                clearInterval(tick);
+            } else {
+                setRetryCountdown(remaining);
+            }
+        }, 1000);
+        return () => clearInterval(tick);
+    }, [rateLimitUntil]);
+
     const handleClearChat = () => {
         setMessages([WELCOME_MESSAGE]);
         sessionStorage.removeItem(SESSION_KEY);
@@ -102,14 +122,13 @@ export function AIChatBot() {
 
     const handleSend = async (overrideText?: string) => {
         const trimmed = (overrideText ?? input).trim();
-        if (!trimmed || isTyping) return;
+        if (!trimmed || isTyping || retryCountdown > 0) return;
 
-        // Rate limiting
+        // Rate limiting local
         const now = Date.now();
-        if (now - lastSentAt < RATE_LIMIT_MS) {
-            return;
-        }
+        if (now - lastSentAt < RATE_LIMIT_MS) return;
         setLastSentAt(now);
+        setHasServiceError(false);
 
         const userMsg: DisplayMessage = {
             id: `user-${Date.now()}`,
@@ -136,11 +155,11 @@ export function AIChatBot() {
                 schedule: contactInfo.schedule,
                 email: contactInfo.email,
                 phone: contactInfo.phone,
-                products: products.map(p => ({ 
-                    name: p.name, 
-                    category: p.category, 
-                    price: p.price, 
-                    slug: p.slug 
+                products: products.map(p => ({
+                    name: p.name,
+                    category: p.category,
+                    price: p.price,
+                    slug: p.slug
                 })),
             });
 
@@ -150,16 +169,31 @@ export function AIChatBot() {
                 content: response,
                 timestamp: new Date(),
             };
-
             setMessages((prev) => [...prev, assistantMsg]);
+
         } catch (error) {
-            const errorMsg: DisplayMessage = {
+            let errorContent: string;
+
+            if (error instanceof AIRateLimitError) {
+                // Rate limit: activar countdown y deshabilitar input
+                const waitMs = error.retryAfterSeconds * 1000;
+                setRateLimitUntil(Date.now() + waitMs);
+                setRetryCountdown(error.retryAfterSeconds);
+                errorContent = `⏳ Demasiadas consultas al mismo tiempo. Podrás escribir de nuevo en **${error.retryAfterSeconds} segundos**.
+
+Mientras tanto puedes contactarnos por WhatsApp. 📱`;
+            } else {
+                // Error de red o servidor
+                setHasServiceError(true);
+                errorContent = 'Disculpa, ocurrió un error de conexión. ¿Puedes intentar de nuevo? Si persiste, escríbenos por WhatsApp. 🙏';
+            }
+
+            setMessages((prev) => [...prev, {
                 id: `error-${Date.now()}`,
                 role: 'assistant',
-                content: 'Disculpa, ocurrió un error. ¿Puedes intentar de nuevo? 🙏',
+                content: errorContent,
                 timestamp: new Date(),
-            };
-            setMessages((prev) => [...prev, errorMsg]);
+            }]);
         } finally {
             setIsTyping(false);
         }
@@ -319,15 +353,28 @@ export function AIChatBot() {
                                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gold to-gold-light flex items-center justify-center">
                                     <Bot className="w-5 h-5 text-charcoal" />
                                 </div>
-                                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-400 rounded-full border-2 border-charcoal" />
+                                <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-charcoal ${
+                                    retryCountdown > 0 ? 'bg-amber-400' : hasServiceError ? 'bg-red-400' : 'bg-green-400'
+                                }`} />
                             </div>
                             <div className="flex-1 min-w-0">
                                 <h3 className="font-display font-semibold text-sm flex items-center gap-1.5">
                                     Rey
                                     <Sparkles className="w-3.5 h-3.5 text-gold" />
                                 </h3>
-                                <p className="text-cream/60 text-xs">
-                                    {isTyping ? 'Escribiendo...' : 'Asistente virtual • En línea'}
+                                <p className={`text-xs ${
+                                    retryCountdown > 0
+                                        ? 'text-amber-300'
+                                        : hasServiceError
+                                            ? 'text-red-300'
+                                            : 'text-cream/60'
+                                }`}>
+                                    {retryCountdown > 0
+                                        ? `⏱ Disponible en ${retryCountdown}s`
+                                        : hasServiceError
+                                            ? 'Error de conexión — Reintenta'
+                                            : isTyping ? 'Escribiendo...' : 'Asistente virtual • En línea'
+                                    }
                                 </p>
                             </div>
                             <div className="flex items-center gap-1">
@@ -439,15 +486,15 @@ export function AIChatBot() {
                                     value={input}
                                     onChange={(e) => setInput(e.target.value.slice(0, MAX_INPUT_LENGTH))}
                                     onKeyDown={handleKeyDown}
-                                    placeholder="Escribe tu pregunta..."
+                                    placeholder={retryCountdown > 0 ? `Espera ${retryCountdown}s antes de escribir...` : 'Escribe tu pregunta...'}
                                     className="flex-1 bg-transparent text-sm text-charcoal placeholder:text-charcoal/40 outline-none py-1.5"
-                                    disabled={isTyping}
+                                    disabled={isTyping || retryCountdown > 0}
                                     maxLength={MAX_INPUT_LENGTH}
                                     aria-label="Escribe tu mensaje para Rey"
                                 />
                                 <button
                                     onClick={handleSend}
-                                    disabled={!input.trim() || isTyping}
+                                    disabled={!input.trim() || isTyping || retryCountdown > 0}
                                     className="p-2 rounded-lg bg-gold text-charcoal hover:bg-gold-light disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 active:scale-95"
                                     aria-label="Enviar mensaje"
                                 >

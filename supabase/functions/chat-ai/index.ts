@@ -119,7 +119,7 @@ PRODUCTOS DISPONIBLES:
 ${
   Array.isArray(ctx.products) && (ctx.products as unknown[]).length > 0
     ? (ctx.products as { name: string; category: string; price: number; slug: string }[])
-        .slice(0, 25)
+        .slice(0, 15)
         .map((p) => `• ${p.name} (${p.category}) — $${p.price?.toLocaleString("es-CO")} COP [Ver](/producto/${p.slug})`)
         .join("\n")
     : "Consulta nuestro [Catálogo](/catalogo)."
@@ -139,12 +139,15 @@ REGLAS:
         generationConfig: { temperature: 0.7, maxOutputTokens: 512 },
       });
 
+      // Limitar historial server-side: máx 10 mensajes para controlar uso de tokens
+      const safeMessages = messages.slice(-10);
+
       // Separar historial del último mensaje
-      const history = messages.slice(0, -1).map((m) => ({
+      const history = safeMessages.slice(0, -1).map((m) => ({
         role: m.role === "user" ? "user" : "model",
         parts: [{ text: m.content }],
       }));
-      const lastMessage = messages[messages.length - 1].content;
+      const lastMessage = safeMessages[safeMessages.length - 1].content;
 
       const reply = await withRetry(async () => {
         const chat = model.startChat({ history });
