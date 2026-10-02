@@ -493,7 +493,7 @@ Mientras tanto puedes contactarnos por WhatsApp. 📱`;
                                     aria-label="Escribe tu mensaje para Rey"
                                 />
                                 <button
-                                    onClick={handleSend}
+                                    onClick={() => handleSend()}
                                     disabled={!input.trim() || isTyping || retryCountdown > 0}
                                     className="p-2 rounded-lg bg-gold text-charcoal hover:bg-gold-light disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 active:scale-95"
                                     aria-label="Enviar mensaje"

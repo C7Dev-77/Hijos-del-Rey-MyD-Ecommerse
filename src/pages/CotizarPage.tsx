@@ -812,7 +812,7 @@ export default function CotizarPage() {
                       <Input value={aiInput} onChange={e => setAiInput(e.target.value)}
                         onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAiSend(); } }}
                         placeholder="Pregúntame sobre materiales, estilos…" className="text-sm h-9" />
-                      <Button size="icon" onClick={handleAiSend} disabled={isAiLoading || !aiInput.trim()} className="h-9 w-9 bg-primary shrink-0">
+                      <Button size="icon" onClick={() => handleAiSend()} disabled={isAiLoading || !aiInput.trim()} className="h-9 w-9 bg-primary shrink-0">
                         {isAiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                       </Button>
                     </div>
