@@ -7,69 +7,227 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const MODEL_NAME = "gemini-2.5-flash"; // Modelo estable y rápido
-const MAX_RETRIES = 3;
-const RETRY_DELAY_MS = 1200; // espera base entre reintentos
+// Modelos activos verificados en Groq
+const GROQ_MODELS = [
+  "openai/gpt-oss-120b",
+  "qwen/qwen3.8-27b",
+  "openai/gpt-oss-20b",
+];
 
-// Función de pausa
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+// Modelos de respaldo en Google Gemini
+const GEMINI_MODELS = [
+  "gemini-2.5-flash",
+  "gemini-1.5-flash",
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PROVEEDOR 1: GROQ API (Ultra-rápido, chips LPU, compatible OpenAI)
+// ─────────────────────────────────────────────────────────────────────────────
+interface GroqMessage {
+  role: "system" | "user" | "assistant";
+  content: string;
 }
 
-// Wrapper con reintentos y backoff exponencial
-async function withRetry<T>(
-  fn: () => Promise<T>,
-  retries = MAX_RETRIES,
-  label = "AI request",
-): Promise<T> {
-  let lastError: Error | null = null;
+async function callGroq({
+  apiKey,
+  messages,
+  temperature = 0.7,
+  maxTokens = 1024,
+  expectJson = false,
+}: {
+  apiKey: string;
+  messages: GroqMessage[];
+  temperature?: number;
+  maxTokens?: number;
+  expectJson?: boolean;
+}): Promise<string> {
+  let lastErr: Error | null = null;
 
-  for (let attempt = 1; attempt <= retries; attempt++) {
+  for (const model of GROQ_MODELS) {
     try {
-      return await fn();
+      const payload: Record<string, unknown> = {
+        model,
+        messages,
+        temperature,
+        max_tokens: maxTokens,
+      };
+
+      if (expectJson) {
+        payload.response_format = { type: "json_object" };
+      }
+
+      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey.trim()}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(10000),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "");
+        throw new Error(`Groq [${model}] error (${response.status}): ${errorText}`);
+      }
+
+      const data = await response.json();
+      const content = data?.choices?.[0]?.message?.content;
+      if (!content) {
+        throw new Error(`Groq [${model}] no devolvió contenido`);
+      }
+
+      console.info(`[chat-ai] Éxito con Groq (${model})`);
+      return content;
     } catch (err: unknown) {
-      lastError = err instanceof Error ? err : new Error(String(err));
-      const isRetryable =
-        lastError.message.includes("overloaded") ||
-        lastError.message.includes("503") ||
-        lastError.message.includes("500") ||
-        lastError.message.includes("UNAVAILABLE") ||
-        lastError.message.includes("quota") ||
-        lastError.message.includes("rate");
-
-      if (!isRetryable || attempt === retries) break;
-
-      const delay = RETRY_DELAY_MS * Math.pow(2, attempt - 1); // backoff: 1.2s, 2.4s, 4.8s
-      console.warn(`[${label}] Intento ${attempt}/${retries} falló: ${lastError.message}. Reintentando en ${delay}ms...`);
-      await sleep(delay);
+      lastErr = err instanceof Error ? err : new Error(String(err));
+      console.warn(`[chat-ai] Intento con Groq (${model}) falló: ${lastErr.message}`);
     }
   }
 
-  throw lastError ?? new Error("Error desconocido en la API de IA");
+  throw lastErr ?? new Error("Todos los modelos de Groq fallaron");
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// PROVEEDOR 2: GOOGLE GEMINI (Respaldo)
+// ─────────────────────────────────────────────────────────────────────────────
+async function callGemini({
+  apiKey,
+  systemInstruction,
+  messages,
+  temperature = 0.7,
+  maxOutputTokens = 1024,
+}: {
+  apiKey: string;
+  systemInstruction: string;
+  messages: { role: string; content: string }[];
+  temperature?: number;
+  maxOutputTokens?: number;
+}): Promise<string> {
+  let lastErr: Error | null = null;
+  const genAI = new GoogleGenerativeAI(apiKey.trim());
+
+  const safe = messages.slice(-10);
+  const history = safe.slice(0, -1).map((m) => ({
+    role: m.role === "assistant" || m.role === "model" ? "model" : "user",
+    parts: [{ text: m.content }],
+  }));
+  const lastMessage = safe[safe.length - 1]?.content ?? "";
+
+  for (const modelName of GEMINI_MODELS) {
+    try {
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        systemInstruction,
+        generationConfig: {
+          temperature,
+          maxOutputTokens,
+        },
+      });
+
+      const chat = model.startChat({ history });
+      const result = await chat.sendMessage([{ text: lastMessage }]);
+      const text = result.response.text();
+      console.info(`[chat-ai] Éxito con Gemini (${modelName})`);
+      return text;
+    } catch (err: unknown) {
+      lastErr = err instanceof Error ? err : new Error(String(err));
+      console.warn(`[chat-ai] Intento con Gemini (${modelName}) falló: ${lastErr.message}`);
+    }
+  }
+
+  throw lastErr ?? new Error("Todos los modelos de Gemini fallaron");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ORQUESTADOR CON FAILOVER (GROQ -> GEMINI)
+// ─────────────────────────────────────────────────────────────────────────────
+async function generateAIResponse({
+  systemPrompt,
+  messages,
+  temperature = 0.7,
+  maxTokens = 1024,
+  expectJson = false,
+}: {
+  systemPrompt: string;
+  messages: { role: string; content: string }[];
+  temperature?: number;
+  maxTokens?: number;
+  expectJson?: boolean;
+}): Promise<{ reply: string; provider: string }> {
+  const groqKey = Deno.env.get("GROQ_API_KEY");
+  const geminiKey = Deno.env.get("GEMINI_API_KEY");
+
+  let groqError: string | null = null;
+  let geminiError: string | null = null;
+
+  // 1. Intentar con Groq
+  if (groqKey) {
+    try {
+      const groqMessages: GroqMessage[] = [
+        { role: "system", content: systemPrompt },
+        ...messages.map((m) => ({
+          role: (m.role === "assistant" || m.role === "model" ? "assistant" : "user") as "user" | "assistant",
+          content: m.content,
+        })),
+      ];
+
+      const reply = await callGroq({
+        apiKey: groqKey,
+        messages: groqMessages,
+        temperature,
+        maxTokens,
+        expectJson,
+      });
+
+      return { reply, provider: "groq" };
+    } catch (err: unknown) {
+      groqError = err instanceof Error ? err.message : String(err);
+      console.warn(`[chat-ai] Groq falló: ${groqError}. Intentando Gemini...`);
+    }
+  } else {
+    groqError = "GROQ_API_KEY no configurada";
+  }
+
+  // 2. Fallback a Google Gemini
+  if (geminiKey) {
+    try {
+      const reply = await callGemini({
+        apiKey: geminiKey,
+        systemInstruction: systemPrompt,
+        messages,
+        temperature,
+        maxOutputTokens: maxTokens,
+      });
+
+      return { reply, provider: "gemini" };
+    } catch (err: unknown) {
+      geminiError = err instanceof Error ? err.message : String(err);
+      console.error(`[chat-ai] Falló Gemini: ${geminiError}`);
+    }
+  } else {
+    geminiError = "GEMINI_API_KEY no configurada";
+  }
+
+  throw new Error(`Todos los proveedores fallaron. Groq: [${groqError}] | Gemini: [${geminiError}]`);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SERVIDOR EDGE FUNCTION
+// ─────────────────────────────────────────────────────────────────────────────
 serve(async (req) => {
-  // CORS preflight
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-    if (!GEMINI_API_KEY) {
-      return new Response(
-        JSON.stringify({ error: "GEMINI_API_KEY no configurada en el servidor" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
-
     let body: Record<string, unknown>;
     try {
       body = await req.json();
     } catch {
       return new Response(
-        JSON.stringify({ error: "Cuerpo de la solicitud inválido (no es JSON)" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        JSON.stringify({ error: "Cuerpo de solicitud inválido (debe ser JSON)" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -77,13 +235,13 @@ serve(async (req) => {
     if (!action || !payload) {
       return new Response(
         JSON.stringify({ error: "Faltan 'action' o 'payload' en la solicitud" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-
-    // ─── CHAT CLIENTE (bot para la tienda pública) ────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────────
+    // ACCIÓN 1: chat_client (Asistente público "Rey")
+    // ─────────────────────────────────────────────────────────────────────────
     if (action === "chat_client") {
       const { messages, storeContext } = payload as {
         messages: { role: string; content: string }[];
@@ -93,13 +251,13 @@ serve(async (req) => {
       if (!messages || !Array.isArray(messages) || messages.length === 0) {
         return new Response(
           JSON.stringify({ error: "messages es requerido y no puede estar vacío" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
       const ctx = storeContext ?? {};
       const systemPrompt = `Eres "Rey", el asistente virtual de M&D Hijos del Rey, una prestigiosa tienda artesanal de muebles en Sampués, Sucre, Colombia.
-Tu objetivo es ayudar a los usuarios a encontrar el mueble perfecto, responder sus dudas y facilitarles el proceso de compra.
+Tu objetivo es asesorar con calidez a los clientes, resolver sus preguntas y motivar la compra o cotización.
 
 INFORMACIÓN DE CONTACTO:
 - WhatsApp: ${ctx.whatsapp ?? "+57 304 629 7119"}
@@ -109,93 +267,77 @@ INFORMACIÓN DE CONTACTO:
 - Cotizaciones: [Cotiza tu mueble a medida](/cotizar)
 - Catálogo: [Ver catálogo completo](/catalogo)
 
-FAQ:
-- Garantías: 1 a 5 años según el tipo de madera.
-- Maderas: Roble, Cedro, Pino y MDF Premium.
-- Tiempos de entrega: 3-5 días (catálogo), 15-30 días hábiles (a medida).
-- Envíos: Nacionales a toda Colombia. Costo según destino.
+DATOS CLAVE:
+- Garantías: 1 a 5 años según la madera (Roble/Cedro/Nogal 5 años, Pino 3 años, MDF 1-2 años).
+- Maderas: Roble, Cedro, Nogal, Pino y MDF Premium.
+- Tiempos de entrega: 3-5 días hábiles (catálogo), 15-30 días hábiles (a medida).
+- Envíos: A toda Colombia.
 
-PRODUCTOS DISPONIBLES:
+PRODUCTOS DISPONIBLES EN TIENDA:
 ${
   Array.isArray(ctx.products) && (ctx.products as unknown[]).length > 0
     ? (ctx.products as { name: string; category: string; price: number; slug: string }[])
         .slice(0, 15)
         .map((p) => `• ${p.name} (${p.category}) — $${p.price?.toLocaleString("es-CO")} COP [Ver](/producto/${p.slug})`)
         .join("\n")
-    : "Consulta nuestro [Catálogo](/catalogo)."
+    : "Revisa nuestro [Catálogo](/catalogo)."
 }
 
-REGLAS:
-1. Respuestas MUY cortas y directas. Usa viñetas (•). NUNCA párrafos largos.
-2. Para muebles específicos, enlaza al producto: [Nombre](/producto/slug).
-3. Para muebles a medida: [Cotiza aquí](/cotizar).
-4. Si te saludan, pregunta el nombre de forma muy breve.
-5. Usa emojis estratégicos. Sé cálido pero conciso.
-6. Si el servicio no está disponible temporalmente, pide que contacten por WhatsApp: [WhatsApp](https://wa.me/${String(ctx.whatsapp ?? "573046297119").replace(/\D/g, "")}).`;
+NORMAS DE RESPUESTA:
+1. Respuestas CORTAS, claras y elegantes. Usa viñetas (•) cuando sea útil.
+2. Si mencionas un producto específico, enlaza así: [Nombre](/producto/slug).
+3. Para muebles a medida: [Cotiza tu mueble aquí](/cotizar).
+4. Sé siempre cortés y profesional pero ágil (máximo 2 a 3 párrafos cortos).
+5. Si preguntan por contacto humano directo, ofrece el WhatsApp: +57 304 629 7119.`;
 
-      const model = genAI.getGenerativeModel({
-        model: MODEL_NAME,
-        systemInstruction: systemPrompt,
-        generationConfig: { temperature: 0.7, maxOutputTokens: 512 },
+      const { reply, provider } = await generateAIResponse({
+        systemPrompt,
+        messages,
+        temperature: 0.7,
+        maxTokens: 512,
+        expectJson: false,
       });
 
-      // Limitar historial server-side: máx 10 mensajes para controlar uso de tokens
-      const safeMessages = messages.slice(-10);
-
-      // Separar historial del último mensaje
-      const history = safeMessages.slice(0, -1).map((m) => ({
-        role: m.role === "user" ? "user" : "model",
-        parts: [{ text: m.content }],
-      }));
-      const lastMessage = safeMessages[safeMessages.length - 1].content;
-
-      const reply = await withRetry(async () => {
-        const chat = model.startChat({ history });
-        const result = await chat.sendMessage([{ text: lastMessage }]);
-        return result.response.text();
-      }, MAX_RETRIES, "chat_client");
-
-      return new Response(JSON.stringify({ reply }), {
+      return new Response(JSON.stringify({ reply, provider }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // ─── CHAT FACTURACIÓN ─────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────────
+    // ACCIÓN 2: chat_invoice (Asistente de facturación interna FacturaBot)
+    // ─────────────────────────────────────────────────────────────────────────
     if (action === "chat_invoice") {
       const { userMessage, conversationHistory } = payload as {
         userMessage: string;
         conversationHistory: { role: string; content: string }[];
       };
 
-      const model = genAI.getGenerativeModel({
-        model: MODEL_NAME,
-        systemInstruction: `Eres FacturaBot, un asistente experto en facturación electrónica colombiana.
-Eres amigable, conciso y conoces la normativa DIAN, IVA, retención en la fuente y régimen simple.
-Manejas descuentos ("20% de descuento"), abreviaciones de cantidad ("una docena" = 12, "medio ciento" = 50).
-Confirma siempre el total de los productos antes de generar la factura.
-Si te piden crear una factura, guíalos para que indiquen: cliente, productos/servicios y cantidades.`,
-        generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
+      const systemPrompt = `Eres FacturaBot, un asistente experto en facturación electrónica colombiana para la tienda M&D Hijos del Rey.
+Eres amigable, conciso y conoces la normativa DIAN, IVA (19%), retenciones y régimen tributario.
+Manejas descuentos ("20% de descuento"), expresiones colombianas y cantidades en lenguaje natural ("docena"=12, "par"=2).
+Si te piden emitir o crear una factura, ayuda al usuario indicándole qué datos faltan (cliente, productos, cantidades y precios) de forma rápida y concisa.`;
+
+      const messages = [
+        ...((conversationHistory as { role: string; content: string }[]) ?? []),
+        { role: "user", content: userMessage },
+      ];
+
+      const { reply, provider } = await generateAIResponse({
+        systemPrompt,
+        messages,
+        temperature: 0.7,
+        maxTokens: 1024,
+        expectJson: false,
       });
 
-      const history = ((conversationHistory as { role: string; content: string }[]) ?? [])
-        .slice(-10)
-        .map((m) => ({
-          role: m.role === "user" ? "user" : "model",
-          parts: [{ text: m.content }],
-        }));
-
-      const reply = await withRetry(async () => {
-        const chat = model.startChat({ history });
-        const result = await chat.sendMessage([{ text: userMessage }]);
-        return result.response.text();
-      }, MAX_RETRIES, "chat_invoice");
-
-      return new Response(JSON.stringify({ reply }), {
+      return new Response(JSON.stringify({ reply, provider }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // ─── PARSE INVOICE ────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────────
+    // ACCIÓN 3: parse_invoice (Extracción estructurada JSON de facturas)
+    // ─────────────────────────────────────────────────────────────────────────
     if (action === "parse_invoice") {
       const { userMessage, clients, products } = payload as {
         userMessage: string;
@@ -204,65 +346,73 @@ Si te piden crear una factura, guíalos para que indiquen: cliente, productos/se
       };
 
       const clientList =
-        clients.length > 0
+        clients?.length > 0
           ? clients.map((c) => `  - ID:"${c.id}" | Nombre:"${c.name}" | NIT:${c.nit}`).join("\n")
           : "  (Sin clientes registrados)";
       const productList =
-        products.length > 0
+        products?.length > 0
           ? products
               .map((p) => `  - ID:"${p.id}" | Código:"${p.code}" | Nombre:"${p.name}" | Precio:${p.price} | IVA:${p.tax}%`)
               .join("\n")
           : "  (Sin productos registrados)";
 
-      const systemPrompt = `Eres un asistente de facturación electrónica colombiana. Tu ÚNICA tarea es extraer datos de factura de texto en lenguaje natural y devolver SOLO un JSON válido, sin texto adicional, sin markdown, sin explicaciones.
+      const systemPrompt = `Eres un extractor experto de datos para facturación en Colombia.
+Tu ÚNICA misión es extraer la información del pedido y responder OBLIGATORIAMENTE con un objeto JSON válido.
+NO agregues explicaciones fuera del JSON.
 
-CLIENTES REGISTRADOS:
+CLIENTES REGISTRADOS EN BASE DE DATOS:
 ${clientList}
 
-PRODUCTOS DEL CATÁLOGO:
+CATÁLOGO DE PRODUCTOS REGISTRADOS:
 ${productList}
 
-INSTRUCCIONES:
-1. Identifica cliente por nombre (coincidencia flexible).
-2. Identifica productos por nombre o código.
-3. Si el cliente NO está: client_id=null, client_name=nombre extraído.
-4. Si el producto NO está: product_id=null, unit_price=precio del texto o 0.
-5. IVA colombiano por defecto: 19%.
-6. Procesa descuentos ajustando unit_price y anotando en "notes".
-7. Cantidades en lenguaje natural: "docena"=12, "par"=2.
-8. RESPONDE ÚNICAMENTE CON EL JSON. NADA MÁS.
+REGLAS DE EXTRACCIÓN:
+1. Identifica el cliente: Si coincide con uno de la lista, asigna su "client_id" y su "client_name". Si no existe, pon "client_id": null y "client_name": "Nombre dicho".
+2. Identifica los productos: Si coincide con el catálogo, asigna su "product_id", nombre, cantidad y "unit_price" registrado. Si no tiene precio o es un producto nuevo, "product_id": null y coloca el precio mencionado o 0.
+3. El IVA estándar por defecto en Colombia es 19 (tax: 19) a menos que se indique lo contrario.
+4. Cantidades: Convierte expresiones naturales ("un par" -> 2, "docena" -> 12).
+5. Formato de respuesta JSON estricto:
+{
+  "client_id": "string o null",
+  "client_name": "string o null",
+  "items": [
+    {
+      "product_id": "string o null",
+      "description": "nombre del producto",
+      "quantity": 1,
+      "unit_price": 500000,
+      "tax": 19
+    }
+  ],
+  "notes": "observaciones o descuentos",
+  "confidence": "high" | "medium" | "low",
+  "message": "Breve mensaje de confirmación para el usuario"
+}`;
 
-FORMATO:
-{"client_id":"uuid o null","client_name":"nombre","items":[{"product_id":"uuid o null","description":"nombre","quantity":1,"unit_price":900000,"tax":0}],"notes":"notas","confidence":"high","message":"Resumen breve"}`;
-
-      const model = genAI.getGenerativeModel({
-        model: MODEL_NAME,
-        systemInstruction: systemPrompt,
-        generationConfig: { temperature: 0.1, maxOutputTokens: 1024 },
+      const { reply: rawText, provider } = await generateAIResponse({
+        systemPrompt,
+        messages: [{ role: "user", content: userMessage }],
+        temperature: 0.1,
+        maxTokens: 1024,
+        expectJson: true,
       });
 
-      const parsed = await withRetry(async () => {
-        const chat = model.startChat({ history: [] });
-        const result = await chat.sendMessage([{ text: userMessage }]);
-        const text = result.response.text();
+      let cleaned = rawText.trim();
+      const firstBrace = cleaned.indexOf("{");
+      const lastBrace = cleaned.lastIndexOf("}");
+      if (firstBrace !== -1 && lastBrace !== -1) {
+        cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+      } else {
+        cleaned = cleaned.replace(/```json/gi, "").replace(/```/g, "").trim();
+      }
 
-        let cleaned = text.trim();
-        const firstBrace = cleaned.indexOf("{");
-        const lastBrace = cleaned.lastIndexOf("}");
-        if (firstBrace !== -1 && lastBrace !== -1) {
-          cleaned = cleaned.substring(firstBrace, lastBrace + 1);
-        } else {
-          cleaned = cleaned.replace(/```json/gi, "").replace(/```/g, "").trim();
-        }
-
-        return JSON.parse(cleaned);
-      }, MAX_RETRIES, "parse_invoice");
+      const parsed = JSON.parse(cleaned);
 
       if (!Array.isArray(parsed.items)) parsed.items = [];
       if (!parsed.confidence) parsed.confidence = "medium";
-      if (!parsed.message) parsed.message = "Factura lista para revisar.";
+      if (!parsed.message) parsed.message = "Factura procesada y lista para revisar.";
 
-      return new Response(JSON.stringify({ parsed }), {
+      return new Response(JSON.stringify({ parsed, provider }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -273,19 +423,9 @@ FORMATO:
     });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);
-    console.error("[chat-ai] Error final:", msg);
+    console.error("[chat-ai] Error general:", msg);
 
-    // Diferenciar errores para mensajes más claros
-    let userMessage = "Servicio de IA temporalmente no disponible. Intenta de nuevo en unos segundos.";
-    if (msg.includes("JSON") || msg.includes("parse")) {
-      userMessage = "La IA devolvió una respuesta inesperada. Por favor intenta de nuevo.";
-    } else if (msg.includes("quota") || msg.includes("rate")) {
-      userMessage = "Límite de solicitudes alcanzado. Espera un momento y vuelve a intentarlo.";
-    } else if (msg.includes("API_KEY") || msg.includes("key")) {
-      userMessage = "Error de configuración del servidor. Contacta al administrador.";
-    }
-
-    return new Response(JSON.stringify({ error: userMessage }), {
+    return new Response(JSON.stringify({ error: "Error en el servicio de IA", details: msg }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

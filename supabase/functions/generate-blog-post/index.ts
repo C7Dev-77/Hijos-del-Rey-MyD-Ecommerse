@@ -7,39 +7,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const MODEL_NAME = "gemini-2.5-flash";
-const MAX_RETRIES = 3;
-const RETRY_DELAY_MS = 1000;
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function withRetry<T>(fn: () => Promise<T>, retries = MAX_RETRIES): Promise<T> {
-  let lastError: Error | null = null;
-
-  for (let attempt = 1; attempt <= retries; attempt++) {
-    try {
-      return await fn();
-    } catch (err: unknown) {
-      lastError = err instanceof Error ? err : new Error(String(err));
-      const isRetryable =
-        lastError.message.includes("overloaded") ||
-        lastError.message.includes("503") ||
-        lastError.message.includes("UNAVAILABLE") ||
-        lastError.message.includes("quota") ||
-        lastError.message.includes("rate");
-
-      if (!isRetryable || attempt === retries) break;
-
-      const delay = RETRY_DELAY_MS * Math.pow(2, attempt - 1);
-      console.warn(`[generate-blog-post] Intento ${attempt}/${retries} falló: ${lastError.message}. Reintentando en ${delay}ms...`);
-      await sleep(delay);
-    }
-  }
-
-  throw lastError ?? new Error("Error desconocido");
-}
+const GROQ_MODEL = "openai/gpt-oss-120b";
+const GEMINI_MODEL = "gemini-2.5-flash";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -47,10 +16,12 @@ serve(async (req) => {
   }
 
   try {
-    const apiKey = Deno.env.get("GEMINI_API_KEY");
-    if (!apiKey) {
+    const groqKey = Deno.env.get("GROQ_API_KEY");
+    const geminiKey = Deno.env.get("GEMINI_API_KEY");
+
+    if (!groqKey && !geminiKey) {
       return new Response(
-        JSON.stringify({ error: "GEMINI_API_KEY no configurada en el servidor" }),
+        JSON.stringify({ error: "No hay claves de API configuradas en Supabase Secrets (GROQ_API_KEY o GEMINI_API_KEY)" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -76,45 +47,82 @@ serve(async (req) => {
       );
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: MODEL_NAME,
-      generationConfig: { temperature: 0.8, maxOutputTokens: 4096 },
-    });
-
-    const prompt = `
-Actúa como un experto redactor de contenidos y SEO especializado en muebles artesanales, carpintería fina y decoración de interiores para la marca "M&D Hijos del Rey" (Sampués, Sucre, Colombia).
-Escribe un artículo de blog completo, elegante y cautivador basado en el siguiente tema: "${topic}".
-Tono del artículo: ${tone}.
-Palabras clave a incluir de forma natural: ${keywords}.
-
-El artículo debe seguir estrictamente este formato JSON:
+    const systemPrompt = `Actúa como un experto redactor de contenidos y SEO especializado en muebles artesanales, carpintería fina y decoración de interiores para la marca "M&D Hijos del Rey" (Sampués, Sucre, Colombia).
+Escribe un artículo de blog completo, elegante y cautivador basado en el tema solicitado.
+El artículo debe responder ESTRICTAMENTE en formato JSON con estas claves:
 {
   "title": "Título atractivo y optimizado para SEO",
   "slug": "slug-optimizado-en-minusculas-con-guiones",
-  "excerpt": "Un resumen corto, persuasivo y sin asteriscos de máximo 160 caracteres para la meta-descripción",
-  "content": "Contenido completo en formato Markdown bien estructurado. NO incluyas un H1 ni repitas el título al inicio. Comienza directamente con una introducción atractiva de 2 párrafos separados por doble salto de línea. Luego incluye al menos 3 secciones con subtítulos H2 (## Nombre de sección). Incluye listas con viñetas (* ) con tips o ventajas. Resalta con negrita (**texto**) los conceptos importantes. Termina con una conclusión y un CTA invitando a explorar el catálogo de M&D Hijos del Rey o solicitar diseño a medida con envíos a toda Colombia."
+  "excerpt": "Un resumen corto persuasivo sin asteriscos de máximo 160 caracteres",
+  "content": "Contenido completo en formato Markdown bien estructurado. NO incluyas un H1 ni repitas el título al inicio. Comienza directamente con una introducción atractiva de 2 párrafos separados por doble salto de línea. Luego incluye al menos 3 secciones con subtítulos H2 (## Nombre). Incluye listas con viñetas (* ) con tips o ventajas. Resalta con negrita (**texto**). Termina con conclusión y CTA invitando a explorar el catálogo de M&D Hijos del Rey o solicitar diseño a medida con envíos a toda Colombia."
 }
+Responde únicamente con el JSON válido.`;
 
-IMPORTANTE: Devuelve ÚNICAMENTE el objeto JSON válido. Sin bloques de código markdown. Sin texto antes o después del JSON.
-`;
+    const userMessage = `Tema: "${topic}". Tono: ${tone}. Palabras clave: ${keywords}`;
 
-    const blogData = await withRetry(async () => {
-      const result = await model.generateContent(prompt);
-      const text = result.response.text().trim();
+    let rawText = "";
 
-      // Extraer JSON robusto: buscar desde { hasta }
-      const firstBrace = text.indexOf("{");
-      const lastBrace = text.lastIndexOf("}");
-      let cleaned = text;
-      if (firstBrace !== -1 && lastBrace !== -1) {
-        cleaned = text.substring(firstBrace, lastBrace + 1);
-      } else {
-        cleaned = text.replace(/```json/gi, "").replace(/```/g, "").trim();
+    // 1. Intentar con Groq
+    if (groqKey) {
+      try {
+        const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${groqKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: GROQ_MODEL,
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userMessage },
+            ],
+            response_format: { type: "json_object" },
+            temperature: 0.7,
+            max_tokens: 3500,
+          }),
+          signal: AbortSignal.timeout(20000),
+        });
+
+        if (groqRes.ok) {
+          const groqData = await groqRes.json();
+          rawText = groqData?.choices?.[0]?.message?.content ?? "";
+          console.info("[generate-blog-post] Éxito con Groq");
+        } else {
+          console.warn("[generate-blog-post] Groq falló, recurriendo a Gemini...");
+        }
+      } catch (err) {
+        console.warn("[generate-blog-post] Error llamando a Groq:", err);
       }
+    }
 
-      return JSON.parse(cleaned);
-    });
+    // 2. Fallback a Gemini si Groq no respondió
+    if (!rawText && geminiKey) {
+      const genAI = new GoogleGenerativeAI(geminiKey);
+      const model = genAI.getGenerativeModel({
+        model: GEMINI_MODEL,
+        generationConfig: { temperature: 0.8, maxOutputTokens: 4096 },
+      });
+      const result = await model.generateContent(`${systemPrompt}\n\n${userMessage}`);
+      rawText = result.response.text().trim();
+      console.info("[generate-blog-post] Éxito con Gemini");
+    }
+
+    if (!rawText) {
+      throw new Error("No se pudo generar el artículo con ningún proveedor de IA");
+    }
+
+    // Limpiar JSON
+    const firstBrace = rawText.indexOf("{");
+    const lastBrace = rawText.lastIndexOf("}");
+    let cleaned = rawText;
+    if (firstBrace !== -1 && lastBrace !== -1) {
+      cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+    } else {
+      cleaned = cleaned.replace(/```json/gi, "").replace(/```/g, "").trim();
+    }
+
+    const blogData = JSON.parse(cleaned);
 
     if (!blogData.title || !blogData.content) {
       return new Response(
@@ -131,15 +139,8 @@ IMPORTANTE: Devuelve ÚNICAMENTE el objeto JSON válido. Sin bloques de código 
     const msg = error instanceof Error ? error.message : String(error);
     console.error("[generate-blog-post] Error final:", msg);
 
-    let userError = "Error al generar el artículo. Intenta de nuevo en unos segundos.";
-    if (msg.includes("JSON") || msg.includes("parse")) {
-      userError = "La IA devolvió un formato inesperado. Intenta con un tema más específico.";
-    } else if (msg.includes("quota") || msg.includes("rate") || msg.includes("overloaded")) {
-      userError = "La IA está ocupada en este momento. Espera 30 segundos y vuelve a intentarlo.";
-    }
-
     return new Response(
-      JSON.stringify({ error: userError }),
+      JSON.stringify({ error: "Error al generar el artículo: " + msg }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
