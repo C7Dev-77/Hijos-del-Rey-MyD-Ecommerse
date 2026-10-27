@@ -77,7 +77,7 @@ export function generateInvoicePDFContent(invoice: {
   const companyLogo = settings?.logo_url || window.location.origin + "/logo.png";
   const resolutionText = settings?.resolution_number
     ? `Resolución DIAN No. ${settings.resolution_number} del ${settings.resolution_date || 'YYYY-MM-DD'} | Rango ${settings.prefix}-${settings.start_range} a ${settings.prefix}-${settings.end_range}`
-    : "Resolución DIAN pendiente de configurar";
+    : "";
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -161,7 +161,7 @@ export function generateInvoicePDFContent(invoice: {
   </div>
   <div class="footer">
     <p>Factura electrónica generada por ${companyName}</p>
-    <p>${resolutionText}</p>
+    ${resolutionText ? `<p>${resolutionText}</p>` : ''}
   </div>
 </body>
 </html>`;
